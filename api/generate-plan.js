@@ -9,6 +9,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing description or exercises' });
   }
 
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'API key not configured' });
+  }
+
   const exerciseList = exercises.map(E => `${E.id}: ${E.name} (${E.muscle})`).join('\n');
 
   const prompt = `You are a professional hypertrophy-focused strength coach. Create a detailed training plan based on this request:
@@ -48,11 +53,11 @@ Return ONLY a valid JSON object — no markdown, no explanation, nothing else:
       method: 'POST',
       headers: {
         'Content-Type': 'application/JSON',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 4000,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -60,15 +65,24 @@ Return ONLY a valid JSON object — no markdown, no explanation, nothing else:
 
     const data = await response.json();
 
+    // Surface any Anthropic error clearly
+    if (data.error) {
+      return res.status(500).json({ 
+        error: `Anthropic error: ${data.error.message}`,
+        type: data.error.type
+      });
+    }
+
     if (!data.content || !data.content[0]) {
-      return res.status(500).json({ error: 'No response from AI', details: data });
+      return res.status(500).json({ 
+        error: 'No response from AI', 
+        status: response.status,
+        data: data 
+      });
     }
 
     const text = data.content[0].text.trim();
-
-    // Strip any accidental markdown code fences
     const cleaned = text.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-
     const plan = JSON.parse(cleaned);
     return res.status(200).json({ plan });
 
