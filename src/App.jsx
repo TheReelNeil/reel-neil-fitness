@@ -636,9 +636,14 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
 // ─── Plans Tab ────────────────────────────────────────────────────────────────
 function PlansTab({plans,exercises,activePlanId,exMap,onActivate,onSavePlans}){
   const [editing,setEditing]=useState(null);
+  const [aiBuilding,setAiBuilding]=useState(false);
   if(editing!==null){const p=editing==="new"?{id:`p${Date.now()}`,name:"",weeks:12,days:[]}:plans.find(p=>p.id===editing);return (<PlanBuilder plan={p} exercises={exercises} exMap={exMap} onSave={p=>{const exists=plans.find(x=>x.id===p.id);onSavePlans(exists?plans.map(x=>x.id===p.id?p:x):[...plans,p]);setEditing(null);}} onCancel={()=>setEditing(null)}/>);}
+  if(aiBuilding){return (<AIPlanBuilder exercises={exercises} exMap={exMap} onSave={p=>{onSavePlans([...plans,{...p,id:`p${Date.now()}`}]);setAiBuilding(false);}} onCancel={()=>setAiBuilding(false)}/>);}
   return(<div style={{padding:"14px 14px 24px"}}>
-    <button style={{...btn("primary"),width:"100%",justifyContent:"center",marginBottom:16}} onClick={()=>setEditing("new")}>{Ic.plus} New Training Plan</button>
+    <div style={{display:"flex",gap:8,marginBottom:16}}>
+      <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>setEditing("new")}>{Ic.plus} New Plan</button>
+      <button style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 16px",borderRadius:7,border:"1px solid #7c3aed",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:"#1a1030",color:"#a78bfa"}} onClick={()=>setAiBuilding(true)}>{"✨"} AI Builder</button>
+    </div>
     {plans.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:"#33333a",fontSize:14}}>No plans yet.</div>}
     {plans.map(p=>(<div key={p.id} style={{...card,border:p.id===activePlanId?"1px solid #5a8a00":"1px solid #1e1e24"}}>
       <div style={{padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -767,4 +772,119 @@ function PBsTab({pbs,exMap}){
       </div>
     </div>))}
   </div>);
+}
+
+// ─── AI Plan Builder ──────────────────────────────────────────────────────────
+function AIPlanBuilder({exercises,exMap,onSave,onCancel}){
+  const [description,setDescription]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [generatedPlan,setGeneratedPlan]=useState(null);
+  const [error,setError]=useState("");
+
+  const generate=async()=>{
+    if(!description.trim())return;
+    setLoading(true);setError("");setGeneratedPlan(null);
+    try{
+      const res=await fetch("/api/generate-plan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({description,exercises})});
+      const data=await res.json();
+      if(data.plan){setGeneratedPlan(data.plan);}
+      else{setError(data.error||"Couldn't generate plan. Try a different description.");}
+    }catch{setError("Network error. Please try again.");}
+    setLoading(false);
+  };
+
+  if(generatedPlan){
+    return(
+      <div style={{padding:"14px 14px 32px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+          <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={()=>setGeneratedPlan(null)}>{Ic.back}</button>
+          <div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:20,color:"#a78bfa"}}>{"✨"} AI GENERATED</div>
+            <div style={{fontSize:12,color:"#55555e",marginTop:1}}>Review your plan before saving</div>
+          </div>
+        </div>
+        <div style={{...card,padding:14,marginBottom:14,background:"#110d1e",border:"1px solid #4c1d95"}}>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:"#e8e4dc"}}>{generatedPlan.name}</div>
+          <div style={{fontSize:12,color:"#7c3aed",marginTop:2}}>{generatedPlan.days?.length} days · {generatedPlan.weeks} weeks</div>
+        </div>
+        {generatedPlan.days?.map((day,di)=>(
+          <div key={di} style={{...card,marginBottom:10}}>
+            <div style={{padding:"10px 14px",borderBottom:"1px solid #1e1e24"}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:16,color:"#e8e4dc"}}>{day.name}</div>
+              <div style={{fontSize:11,color:"#55555e",marginTop:2}}>{day.exercises?.length} exercises</div>
+            </div>
+            {day.exercises?.map((ex,ei)=>{
+              const e=exMap[ex.exerciseId];
+              const cfg=ex.setConfigs?.[0];
+              return(
+                <div key={ei} style={{padding:"9px 14px",borderTop:ei===0?"none":"1px solid #141418",display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:500,fontSize:14,color:e?"#e8e4dc":"#ff8080"}}>{e?e.name:`Unknown (${ex.exerciseId})`}</div>
+                    {e&&<MuscleChip muscle={e.muscle}/>}
+                  </div>
+                  {cfg&&<div style={{fontSize:12,color:"#55555e",textAlign:"right"}}>{cfg.sets} sets<br/>{cfg.repsRange} reps</div>}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        <div style={{display:"flex",gap:8,marginTop:8}}>
+          <button style={{...btn("ghost"),flex:1,justifyContent:"center"}} onClick={()=>setGeneratedPlan(null)}>Regenerate</button>
+          <button style={{...btn("primary"),flex:2,justifyContent:"center"}} onClick={()=>onSave(generatedPlan)}>{Ic.check} Save Plan</button>
+        </div>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{padding:"14px 14px 32px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
+        <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={onCancel}>{Ic.back}</button>
+        <div>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:20,color:"#a78bfa"}}>{"✨"} AI PLAN BUILDER</div>
+          <div style={{fontSize:12,color:"#55555e",marginTop:1}}>Describe what you want and Claude builds it</div>
+        </div>
+      </div>
+
+      <div style={{...card,padding:14,marginBottom:14,background:"#110d1e",border:"1px solid #4c1d95"}}>
+        <div style={{fontSize:12,color:"#7c6aaa",lineHeight:1.6}}>
+          Describe your training goal, how many days per week, experience level, and any preferences. Claude will build a full plan using your exercise library.
+        </div>
+        <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:6}}>
+          {["4 day upper/lower split, 12 weeks, intermediate","3 day full body, beginner, focus on compounds","5 day PPL split, advanced, high volume"].map(eg=>(
+            <button key={eg} onClick={()=>setDescription(eg)} style={{fontSize:11,background:"#1e1530",border:"1px solid #4c1d95",borderRadius:5,padding:"4px 8px",color:"#a78bfa",cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+              {eg}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{marginBottom:14}}>
+        <label style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#55555e",display:"block",marginBottom:6}}>Describe Your Plan</label>
+        <textarea
+          value={description}
+          onChange={e=>setDescription(e.target.value)}
+          placeholder="e.g. 4 day upper/lower hypertrophy split, 12 weeks with a deload on week 6, intermediate level, I want to focus on chest and back growth..."
+          style={{background:"#1a1a20",border:"1px solid #2a2a32",borderRadius:7,padding:"12px 14px",color:"#e8e4dc",width:"100%",fontSize:14,minHeight:120,resize:"vertical",fontFamily:"'Barlow',sans-serif",lineHeight:1.5}}
+        />
+      </div>
+
+      {error&&<div style={{background:"#2a1010",border:"1px solid #4a2020",borderRadius:7,padding:"10px 14px",fontSize:13,color:"#ff8080",marginBottom:12}}>{error}</div>}
+
+      <button
+        style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"14px",background:loading?"#1a1030":"#7c3aed",color:"white",opacity:loading||!description.trim()?0.6:1}}
+        onClick={generate}
+        disabled={loading||!description.trim()}
+      >
+        {loading?(
+          <span style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{display:"inline-block",width:14,height:14,border:"2px solid #ffffff44",borderTopColor:"white",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+            Building your plan…
+          </span>
+        ):"✨ Generate Plan"}
+      </button>
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 }
