@@ -4,30 +4,30 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 // ─── Supabase ─────────────────────────────────────────────────────────────────
 const SB_URL = "https://nzhsffkflbknciojaexi.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56aHNmZmtmbGJrbmNpb2phZXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwOTk1MjAsImV4cCI6MjA5NDY3NTUyMH0.augC9mFf--otWeSwX5IfjIUqx_FofITjJ_nkZMU5dC8";
-const aHdr = {"Content-Type":"application/json",apikey:SB_KEY};
-const dHdr = t => ({"Content-Type":"application/json",apikey:SB_KEY,Authorization:`Bearer ${t}`});
-const sbSignUp  = (e,p) => fetch(`${SB_URL}/auth/v1/signup`,                        {method:"POST",headers:aHdr,body:JSON.stringify({email:e,password:p})}).then(r=>r.json());
-const sbSignIn  = (e,p) => fetch(`${SB_URL}/auth/v1/token?grant_type=password`,      {method:"POST",headers:aHdr,body:JSON.stringify({email:e,password:p})}).then(r=>r.json());
-const sbRefresh = rt    => fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {method:"POST",headers:aHdr,body:JSON.stringify({refresh_token:rt})}).then(r=>r.json());
-const sbSignOut = t     => fetch(`${SB_URL}/auth/v1/logout`,{method:"POST",headers:dHdr(t)});
-const dbLoad = async (t,k) => {
+const aHdr = {"Content-Type":"application/JSON",apikey:SB_KEY};
+const dHdr = T => ({"Content-Type":"application/JSON",apikey:SB_KEY,Authorization:`Bearer ${t}`});
+const sbSignUp  = (E,P) => fetch(`${SB_URL}/auth/v1/signup`,                        {method:"POST",headers:aHdr,body:JSON.stringify({email:e,password:p})}).then(R=>r.json());
+const sbSignIn  = (E,P) => fetch(`${SB_URL}/auth/v1/token?grant_type=password`,      {method:"POST",headers:aHdr,body:JSON.stringify({email:e,password:p})}).then(R=>r.json());
+const sbRefresh = rt    => fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {method:"POST",headers:aHdr,body:JSON.stringify({refresh_token:rt})}).then(R=>r.json());
+const sbSignOut = T     => fetch(`${SB_URL}/auth/v1/logout`,{method:"POST",headers:dHdr(t)});
+const dbLoad = async (T,K) => {
   try {
-    const r=await fetch(`${SB_URL}/rest/v1/user_data?key=eq.${k}&select=value`,{headers:dHdr(t)});
+    const R=await fetch(`${SB_URL}/rest/v1/user_data?key=eq.${k}&select=value`,{headers:dHdr(t)});
     if(!r.ok){ console.error("dbLoad failed:",k,r.status); return null; }
-    const d=await r.json();
+    const D=await r.json();
     if(!Array.isArray(d)){ console.error("dbLoad unexpected response:",k,d); return null; }
     return d?.[0]?.value??null;
-  } catch(e) { console.error("dbLoad error:",k,e); return null; }
+  } catch(E) { console.error("dbLoad error:",k,e); return null; }
 };
-const dbSave = async (t,uid,k,v) => {
+const dbSave = async (T,uid,K,V) => {
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/user_data`,{method:"POST",headers:{...dHdr(t),Prefer:"resolution=merge-duplicates"},body:JSON.stringify({user_id:uid,key:k,value:v})});
+    const R = await fetch(`${SB_URL}/rest/v1/user_data`,{method:"POST",headers:{...dHdr(t),Prefer:"resolution=merge-duplicates"},body:JSON.stringify({user_id:uid,key:k,value:v})});
     if(!r.ok){ console.error("dbSave failed:",r.status,await r.text()); return false; }
     return true;
-  } catch(e) { console.error("dbSave error:",e); return false; }
+  } catch(E) { console.error("dbSave error:",e); return false; }
 };
-const storeSession = async s => { try { localStorage.setItem("gym:sess", JSON.stringify(s)); } catch {} };
-const loadSession  = async () => { try { const r=localStorage.getItem("gym:sess"); return r?JSON.parse(r):null; } catch { return null; } };
+const storeSession = async S => { try { localStorage.setItem("gym:sess", JSON.stringify(s)); } catch {} };
+const loadSession  = async () => { try { const R=localStorage.getItem("gym:sess"); return r?JSON.parse(r):null; } catch { return null; } };
 const clearSession = async () => { try { localStorage.removeItem("gym:sess"); } catch {} };
 
 // ─── Exercises ────────────────────────────────────────────────────────────────
@@ -46,32 +46,32 @@ const DEFAULT_EXERCISES = [
   {id:"t1",muscle:"Traps",name:"DB Shrug"},{id:"t2",muscle:"Traps",name:"Barbell Shrug"},{id:"t3",muscle:"Traps",name:"Behind Back Shrug"},{id:"t4",muscle:"Traps",name:"Cable Shrug"},{id:"t5",muscle:"Traps",name:"Rack Pull"},{id:"t6",muscle:"Traps",name:"Face Pull"},{id:"t7",muscle:"Traps",name:"Power Clean"},
   {id:"f1",muscle:"Forearms",name:"Wrist Curls"},{id:"f2",muscle:"Forearms",name:"Reverse Wrist Curls"},{id:"f3",muscle:"Forearms",name:"Hammer Curls"},{id:"f4",muscle:"Forearms",name:"Reverse Barbell Curl"},{id:"f5",muscle:"Forearms",name:"Behind Back Wrist Curl"},{id:"f6",muscle:"Forearms",name:"Cable Reverse Curl"},{id:"f7",muscle:"Forearms",name:"Plate Pinch"},
 ];
-const MUSCLES = [...new Set(DEFAULT_EXERCISES.map(e=>e.muscle))];
+const MUSCLES = [...new Set(DEFAULT_EXERCISES.map(E=>e.muscle))];
 const MC = {Chest:"#ff6b35",Back:"#4ecdc4",Shoulders:"#f0a060",Biceps:"#f472b6",Triceps:"#fb923c",Quads:"#34d399",Hamstrings:"#60a5fa",Glutes:"#f59e0b",Adductors:"#e879f9",Calves:"#94a3b8",Core:"#fbbf24",Traps:"#38bdf8",Forearms:"#d97706"};
-const est1RM = (w,r) => (!w||!r||r<=0)?0:r===1?w:Math.round(w*(1+r/30));
+const est1RM = (W,R) => (!w||!r||r<=0)?0:r===1?w:Math.round(w*(1+r/30));
 const today = () => new Date().toISOString().slice(0,10);
-const fmtDate = d => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
-const fmtDateShort = d => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+const fmtDate = D => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+const fmtDateShort = D => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const Ic = {
-  dumbbell:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path d="M6 5v14M18 5v14M9 8H6M18 8h-3M9 16H6M18 16h-3"/><rect x="3" y="7" width="3" height="10" rx="1"/><rect x="18" y="7" width="3" height="10" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg>,
-  plan:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>,
-  today:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  trophy:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><polyline points="8 22 12 18 16 22"/><path d="M5 2h14l-2 9H7L5 2z"/><path d="M5 7H3a2 2 0 0 0 0 4h2"/><path d="M19 7h2a2 2 0 0 0 0 4h-2"/><line x1="12" y1="18" x2="12" y2="15"/></svg>,
-  calories:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-4 9H9c-1-3-4-5-4-9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/><path d="M9.7 17h4.6"/></svg>,
-  scale:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path d="M12 3v1"/><path d="M3 9h18"/><path d="M5 9l2 9h10l2-9"/><circle cx="12" cy="6" r="3"/></svg>,
+  dumbbell:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path D="M6 5v14M18 5v14M9 8H6M18 8h-3M9 16H6M18 16h-3"/><rect X="3" Y="7" width="3" height="10" rx="1"/><rect X="18" Y="7" width="3" height="10" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/></svg>,
+  plan:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><rect X="3" Y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path D="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>,
+  today:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><circle cx="12" cy="12" R="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  trophy:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><polyline points="8 22 12 18 16 22"/><path D="M5 2h14l-2 9H7L5 2z"/><path D="M5 7H3a2 2 0 0 0 0 4h2"/><path D="M19 7h2a2 2 0 0 0 0 4h-2"/><line x1="12" y1="18" x2="12" y2="15"/></svg>,
+  calories:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path D="M12 2a7 7 0 0 1 7 7c0 4-3 6-4 9H9c-1-3-4-5-4-9a7 7 0 0 1 7-7z"/><path D="M9 21h6"/><path D="M9.7 17h4.6"/></svg>,
+  scale:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path D="M12 3v1"/><path D="M3 9h18"/><path D="M5 9l2 9h10l2-9"/><circle cx="12" cy="6" R="3"/></svg>,
   plus:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{width:16,height:16}}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  x:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{width:13,height:13}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  X:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{width:13,height:13}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   check:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{width:15,height:15}}><polyline points="20 6 9 17 4 12"/></svg>,
   back:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{width:20,height:20}}><polyline points="15 18 9 12 15 6"/></svg>,
-  search:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:15,height:15}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-  fire:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 01-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>,
-  edit:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-  logout:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:16,height:16}}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-  home:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  trash:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
-  target:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  search:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:15,height:15}}><circle cx="11" cy="11" R="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  fire:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}><path D="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 01-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>,
+  edit:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}><path D="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path D="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  logout:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:16,height:16}}><path D="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  home:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:18,height:18}}><path D="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  trash:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}><polyline points="3 6 5 6 21 6"/><path D="M19 6l-1 14H6L5 6"/><path D="M10 11v6M14 11v6"/><path D="M9 6V4h6v2"/></svg>,
+  target:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><circle cx="12" cy="12" R="10"/><circle cx="12" cy="12" R="6"/><circle cx="12" cy="12" R="2"/></svg>,
 };
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
@@ -88,13 +88,13 @@ const base={display:"flex",flexDirection:"column",height:"100dvh",maxWidth:480,m
 const inp={background:"#323238",border:"1px solid #2a2a32",borderRadius:7,padding:"11px 14px",color:"#f0ece6",width:"100%",fontSize:15};
 const setInp={background:"#323238",border:"1px solid #2a2a32",borderRadius:6,padding:"8px 6px",color:"#f0ece6",textAlign:"center",width:"100%",fontSize:16};
 const card={background:"#28282e",border:"1px solid #1e1e24",borderRadius:10,marginBottom:10,overflow:"hidden"};
-const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"10px 16px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",
+const btn=(V="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"10px 16px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",
   ...(v==="primary"?{background:"#e8621a",color:"#1a1a1e"}:v==="ghost"?{background:"transparent",color:"#9a9aa2",border:"1px solid #2a2a32"}:v==="danger"?{background:"transparent",color:"#ff5555",border:"1px solid #3a2020"}:{background:"#3a3a42",color:"#f0ece6"})});
 const lbl={fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#72727c",display:"block",marginBottom:5};
 const statBox=(color="#e8621a")=>({background:"#26262c",border:`1px solid ${color}22`,borderRadius:8,padding:"12px 14px",flex:1});
 
 function MuscleChip({muscle}){return <span style={{fontSize:10,background:(MC[muscle]||"#72727c")+"22",color:MC[muscle]||"#72727c",padding:"2px 6px",borderRadius:3,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>{muscle}</span>;}
-function MuscleFilter({active,onChange}){return(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>{["All",...MUSCLES].map(m=><button key={m} onClick={()=>onChange(m)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",background:active===m?(MC[m]||"#e8621a"):"transparent",color:active===m?"#1a1a1e":"#72727c",borderColor:active===m?(MC[m]||"#e8621a"):"#44444c"}}>{m}</button>)}</div>);}
+function MuscleFilter({active,onChange}){return(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>{["All",...MUSCLES].map(M=><button key={m} onClick={()=>onChange(m)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",background:active===m?(MC[m]||"#e8621a"):"transparent",color:active===m?"#1a1a1e":"#72727c",borderColor:active===m?(MC[m]||"#e8621a"):"#44444c"}}>{m}</button>)}</div>);}
 function Divider(){return <div style={{height:1,background:"#323238",margin:"4px 0"}}/>;}
 function SectionHead({label}){return <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1.5,color:"#606068",textTransform:"uppercase",marginBottom:10,marginTop:4}}>{label}</div>;}
 
