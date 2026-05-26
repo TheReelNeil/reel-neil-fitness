@@ -1,43 +1,45 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { goal, currentWeek, planName, recentPb, currentWeight, targetWeight, totalWeeks } = req.body;
+  const { goal, currentWeek, planName, recentPb, currentWeight, targetWeight, totalWeeks,
+          lastSteps, stepsTarget, thisWeekAvgSteps, thisWeekCals, calTarget, recentCardio } = req.body;
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
 
   const weeksLeft = totalWeeks && currentWeek ? totalWeeks - currentWeek : null;
 
-  const context = [
-    currentWeek && `They are on week ${currentWeek}${totalWeeks ? ` of ${totalWeeks}` : ''} of their "${planName||'training'}" plan`,
-    weeksLeft !== null && weeksLeft <= 3 && `Only ${weeksLeft} weeks left in this plan`,
-    recentPb && `Most recent PB: ${recentPb}`,
-    currentWeight && targetWeight && `Current weight: ${currentWeight}kg, target: ${targetWeight}kg (${Math.round((currentWeight-targetWeight)*10)/10}kg to go)`,
+  const trainingContext = [
+    currentWeek && `Week ${currentWeek}${totalWeeks ? ` of ${totalWeeks}` : ''} of "${planName||'training'}" plan`,
+    weeksLeft !== null && weeksLeft <= 3 && `Only ${weeksLeft} weeks left`,
+    recentPb && `Recent PB: ${recentPb}`,
+    currentWeight && targetWeight && `Weight: ${currentWeight}kg, target ${targetWeight}kg (${Math.abs(Math.round((currentWeight-targetWeight)*10)/10)}kg ${currentWeight>targetWeight?'to lose':'to gain'})`,
     currentWeight && !targetWeight && `Current weight: ${currentWeight}kg`,
   ].filter(Boolean).join('. ');
 
-  const prompt = `You are Neil's brutally honest best mate who also happens to be a PT. You have zero filter, a sharp wit, and genuinely care about his results — but you show it through relentless, funny abuse rather than motivational posters.
+  const cardioContext = [
+    lastSteps && stepsTarget && `Last logged steps: ${lastSteps.steps.toLocaleString()} on ${lastSteps.date} (daily target: ${stepsTarget.toLocaleString()}) — ${lastSteps.steps >= stepsTarget ? 'hit the target' : `${(stepsTarget - lastSteps.steps).toLocaleString()} short of target`}`,
+    lastSteps && !stepsTarget && `Last logged steps: ${lastSteps.steps.toLocaleString()} on ${lastSteps.date}`,
+    thisWeekAvgSteps && stepsTarget && `This week's average steps: ${thisWeekAvgSteps.toLocaleString()} (target: ${stepsTarget.toLocaleString()})`,
+    calTarget && thisWeekCals > 0 && `This week's cardio calories burned: ${thisWeekCals} of ${calTarget} target (${calTarget - thisWeekCals > 0 ? `${calTarget - thisWeekCals} still to go` : 'target hit!'})`,
+    calTarget && thisWeekCals === 0 && `No cardio calories logged this week yet (weekly target: ${calTarget})`,
+    recentCardio && `Most recent cardio: ${recentCardio}`,
+  ].filter(Boolean).join('. ');
 
-Context about Neil:
-${context || 'Neil is training'}
+  const prompt = `You are a brutally honest personal trainer with a sharp wit and genuine care for your client's results — you show it through funny, cutting banter rather than generic motivation.
 
-Write a short daily message (2-3 sentences max). Pull from this range of material freely — vary it every day:
-- His actual weight and how far he is from his target (be brutal but specific with numbers)
-- Jokes about being fat, overweight, carrying extra timber, needing two seats, etc
-- Jabs about skipping sessions, making excuses, or loving the sofa more than the squat rack
-- Food-related: kebabs, McDonald's, curries, pies, full English, beers, not just biscuits
-- Gym culture banter: gym selfies, not going deep enough, leaving the weights out, talking too much between sets
-- Huge hype when he hits a PB — make the exact numbers sound genuinely impressive
-- End-of-plan urgency or mid-plan slump digs
-- Occasional genuine encouragement buried in the abuse
-- TV/Netflix/PlayStation digs when appropriate
-- Compare him to a specific athlete or strongman sarcastically if it fits
+Training context: ${trainingContext || 'Client is training'}
+${cardioContext ? `Cardio & steps context: ${cardioContext}` : ''}
 
-Rules:
-- ALWAYS reference his real numbers (weight, PB, week number) — never be generic
-- Rotate the type of joke — don't always go for food, mix it up
-- Keep it punchy — no waffle
-- It should make him laugh AND feel slightly guilty
-- Never be offensive about anything other than his fitness/diet/laziness
+Write a short daily message (2-3 sentences max). Vary the focus — sometimes comment on training progress, sometimes on steps history, sometimes on cardio calories remaining for the week, sometimes on weight. Use the actual numbers. Some ideas:
+- If their last logged steps were below target: mock them for it with specific numbers
+- If they smashed their steps: give genuine (if sarcastic) credit
+- If they haven't hit their weekly cardio calorie target yet: point out exactly how much is left
+- If they're behind on cardio: suggest it's because they're welded to the sofa
+- If they hit a PB: make the exact numbers sound genuinely impressive
+- Diet banter: kebabs, pies, McDonald's, curries, beer, takeaways
+- No motorbike, car, vehicle or sports race metaphors whatsoever
+- Address the user as "you" — never use a name
+- Keep it to 2-3 punchy sentences, specific to their data
 
 Return just the message, nothing else.`;
 
