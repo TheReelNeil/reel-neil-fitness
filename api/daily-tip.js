@@ -1,52 +1,61 @@
+S
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
  
-  const { goal, currentWeek, planName, recentPb, currentWeight, targetWeight, totalWeeks,
-          lastSteps, stepsTarget, thisWeekAvgSteps, thisWeekCals, calTarget, recentCardio } = req.body;
+  const { currentWeek, planName, recentPb, currentWeight, targetWeight, totalWeeks,
+          stepsTarget, kcalTarget, focus, streak, yesterday, recovery, weekAvgs } = req.body;
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
  
   const weeksLeft = totalWeeks && currentWeek ? totalWeeks - currentWeek : null;
  
-  // Describe how recent the last steps log was, accurately
-  let stepsTiming = '';
-  if (lastSteps) {
-    const D = lastSteps.daysAgo;
-    if (D <= 0) stepsTiming = 'logged today';
-    else if (D === 1) stepsTiming = 'logged yesterday';
-    else if (D <= 6) stepsTiming = `logged ${D} days ago`;
-    else stepsTiming = `last logged ${D} days ago (a while back — they haven't logged steps recently)`;
+  const ctx = [];
+  if (currentWeek) ctx.push(`Week ${currentWeek}${totalWeeks ? ` of ${totalWeeks}` : ''} of "${planName || 'training'}" plan${weeksLeft !== null && weeksLeft <= 3 ? ` — only ${weeksLeft} weeks left` : ''}`);
+  if (recentPb) ctx.push(`Recent PB: ${recentPb}`);
+  if (currentWeight && targetWeight) ctx.push(`Weight: ${currentWeight}kg, target ${targetWeight}kg (${Math.abs(Math.round((currentWeight - targetWeight) * 10) / 10)}kg ${currentWeight > targetWeight ? 'to lose' : 'to gain'})`);
+  else if (currentWeight) ctx.push(`Current weight: ${currentWeight}kg`);
+  if (typeof streak === 'number' && streak > 0) ctx.push(`Check-in streak: ${streak} consecutive days fully logged`);
+  if (typeof streak === 'number' && streak === 0) ctx.push(`Check-in streak: broken — yesterday wasn't fully logged`);
+ 
+  if (yesterday) {
+    const Y = [];
+    if (yesterday.steps != null) Y.push(`${yesterday.steps.toLocaleString()} steps${stepsTarget ? ` (target ${stepsTarget.toLocaleString()} — ${yesterday.steps >= stepsTarget ? 'hit' : `${(stepsTarget - yesterday.steps).toLocaleString()} short`})` : ''}`);
+    if (yesterday.kcal != null) Y.push(`${yesterday.kcal.toLocaleString()} kcal eaten${kcalTarget ? ` (target ${kcalTarget.toLocaleString()} — ${yesterday.kcal <= kcalTarget ? 'on plan' : `${(yesterday.kcal - kcalTarget).toLocaleString()} over`})` : ''}`);
+    if (yesterday.offPlan) Y.push('had an off-plan meal');
+    if (yesterday.alcohol) Y.push('had alcohol');
+    if (Y.length) ctx.push(`Yesterday: ${Y.join('; ')}`);
   }
  
-  const trainingContext = [
-    currentWeek && `Week ${currentWeek}${totalWeeks ? ` of ${totalWeeks}` : ''} of "${planName||'training'}" plan`,
-    weeksLeft !== null && weeksLeft <= 3 && `Only ${weeksLeft} weeks left`,
-    recentPb && `Recent PB: ${recentPb}`,
-    currentWeight && targetWeight && `Weight: ${currentWeight}kg, target ${targetWeight}kg (${Math.abs(Math.round((currentWeight-targetWeight)*10)/10)}kg ${currentWeight>targetWeight?'to lose':'to gain'})`,
-    currentWeight && !targetWeight && `Current weight: ${currentWeight}kg`,
-  ].filter(Boolean).join('. ');
+  if (recovery) {
+    const R = [];
+    if (recovery.sleepLastNight != null) R.push(`slept ${recovery.sleepLastNight}h last night${recovery.sleepAvg30 != null ? ` (30-day avg ${recovery.sleepAvg30}h)` : ''}`);
+    if (recovery.hrv != null) R.push(`HRV ${recovery.hrv}${recovery.hrvAvg30 != null ? ` (avg ${recovery.hrvAvg30})` : ''}`);
+    if (recovery.rhr != null) R.push(`resting HR ${recovery.rhr}${recovery.rhrAvg30 != null ? ` (avg ${recovery.rhrAvg30})` : ''}`);
+    if (R.length) ctx.push(`Recovery: ${R.join('; ')}`);
+  }
  
-  const cardioContext = [
-    lastSteps && stepsTarget && `Most recent steps log: ${lastSteps.steps.toLocaleString()} steps, ${stepsTiming} (daily target ${stepsTarget.toLocaleString()}) — that was ${lastSteps.steps >= stepsTarget ? 'on target' : `${(stepsTarget - lastSteps.steps).toLocaleString()} short`}`,
-    lastSteps && !stepsTarget && `Most recent steps log: ${lastSteps.steps.toLocaleString()} steps, ${stepsTiming}`,
-    !lastSteps && stepsTarget && `No steps have ever been logged (daily target ${stepsTarget.toLocaleString()})`,
-    calTarget && thisWeekCals > 0 && `This week's cardio calories: ${thisWeekCals} of ${calTarget} target (${calTarget - thisWeekCals > 0 ? `${calTarget - thisWeekCals} still to go` : 'target hit!'})`,
-    calTarget && thisWeekCals === 0 && `No cardio logged this week yet (weekly target ${calTarget} cals)`,
-    recentCardio && `Most recent cardio session: ${recentCardio}`,
-  ].filter(Boolean).join('. ');
+  if (weekAvgs) {
+    const W = [];
+    if (weekAvgs.weightThis != null) W.push(`weight avg ${weekAvgs.weightThis}kg${weekAvgs.weightLast != null ? ` (last week ${weekAvgs.weightLast}kg)` : ''}`);
+    if (weekAvgs.kcalThis != null) W.push(`calorie avg ${weekAvgs.kcalThis.toLocaleString()}${kcalTarget ? ` vs ${kcalTarget.toLocaleString()} target` : ''}`);
+    if (weekAvgs.stepsThis != null) W.push(`step avg ${weekAvgs.stepsThis.toLocaleString()}${stepsTarget ? ` vs ${stepsTarget.toLocaleString()} target` : ''}`);
+    if (weekAvgs.sleepThis != null) W.push(`sleep avg ${weekAvgs.sleepThis}h`);
+    if (W.length) ctx.push(`This week so far: ${W.join('; ')}`);
+  }
  
   const prompt = `You are a brutally honest personal trainer with a sharp wit and genuine care for your client's results — you show it through funny, cutting banter rather than generic motivation.
  
-Training context: ${trainingContext || 'Client is training'}
-${cardioContext ? `Cardio & steps context: ${cardioContext}` : ''}
+Client data (all real, tracked in their app and synced from their Apple Watch):
+${ctx.map(C => `- ${C}`).join('\n')}
  
-Write a short daily message (2-3 sentences max). Vary the focus each day — sometimes training, sometimes steps, sometimes cardio calories, sometimes weight.
+Today's suggested focus: ${focus || 'whatever stands out most in the data'}.
+ 
+Write a short daily message (2-3 sentences max). Lead with the suggested focus IF the data has something worth saying about it; otherwise pick the single most interesting or most damning signal in the data. React to SPECIFIC numbers — praise what's genuinely good (streaks, targets hit, weight trending the right way, strong recovery), and give them stick for what isn't (short sleep, missed steps, calorie overshoots, off-plan meals, alcohol, broken streaks).
  
 CRITICAL ACCURACY RULES:
-- Only reference the data you've been given. Do NOT invent or assume any numbers or timings.
-- Be accurate about WHEN things happened. If their last steps log was "a while back", do NOT say "yesterday" — call out that they haven't logged steps in a while and give them stick for it.
-- If no steps have ever been logged, mock them for never logging any rather than referencing a number.
+- Only reference the data you've been given. Do NOT invent or assume any numbers, timings or events.
 - Use exact numbers from the data only.
+- If a metric isn't listed above, don't mention it.
  
 Style:
 - Address the user as "you" — never use a name
