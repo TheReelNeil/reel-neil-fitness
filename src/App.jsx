@@ -435,7 +435,7 @@ function MainApp({session,onLogout}){
   const exMap=Object.fromEntries((exercises||[]).map(e=>[e.id,e]));
 
   if(!ready)return(<><style>{css}</style><div style={{...base,alignItems:"center",justifyContent:"center",gap:8}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,letterSpacing:2,color:C.orange}}>SYNCING…</div><div style={{fontSize:12,color:C.textMute}}>Loading your data</div></div></>);
-  if(sessionDay!==null)return(<><style>{css}</style><SessionLogger day={activePlan?.days[sessionDay]} dayIdx={sessionDay} plan={activePlan} week={currentWeek} logs={logs} pbs={pbs} exMap={exMap} onLog={async(nl,np)=>{await saveLogs(nl);await savePbs(np);}} onBack={()=>setSessionDay(null)}/></>);
+  if(sessionDay!==null)return(<><style>{css}</style><SessionLogger day={activePlan?.days[sessionDay]} dayIdx={sessionDay} plan={activePlan} week={currentWeek} logs={logs} pbs={pbs} exMap={exMap} onLog={async(nl,np)=>{await saveLogs(nl);await savePbs(np);}} onSavePbs={savePbs} onBack={()=>setSessionDay(null)}/></>);
 
   const TABS=[["home","HOME",Ic.home],["daily","DAILY",Ic.daily],["today","TRAIN",Ic.today],["plans","PLANS",Ic.plan],["pbs","PBs",Ic.trophy],["exercises","EXERCISES",Ic.dumbbell],["calories","CALS",Ic.calories],["pics","PICS",Ic.camera],["cardio","CARDIO",Ic.cardio],["running","RUN",Ic.run]];
 
@@ -1623,7 +1623,7 @@ function RestTimer(){
 }
 
 // ─── Session Logger ───────────────────────────────────────────────────────────
-function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
+function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBack}){
   const existing=logs?.[plan.id]?.[week]?.[dayIdx]||{};
   const existingSwaps=logs?.[plan.id]?.[week]?.[`${dayIdx}_swaps`]||{};
 
@@ -1703,6 +1703,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
   const initNotes=savedDraft?.notes||(logs?.[plan.id]?.[week]?.[`${dayIdx}_notes`]||"");
   const [sets,setSets]=useState(initSets);
   const [newPbIds,setNewPbIds]=useState(new Set());
+  const [pendingPbs,setPendingPbs]=useState([]);
   const [saved,setSaved]=useState(false);
   const [exerciseInfo,setExerciseInfo]=useState(null);
   const [sessionNotes,setSessionNotes]=useState(initNotes);
@@ -1765,7 +1766,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
     setSwappingEx(null);setSwapSuggestions([]);setSwapBrowse(false);
   };
   const handleSave=async()=>{
-    const np={...pbs};const tr=new Set();
+    const base={...pbs};const np={...pbs};const tr=new Set();
     Object.entries(sets).forEach(([exId,exSets])=>exSets.forEach(s=>{
       const w=parseFloat(s.weight),r=parseInt(s.reps);
       if(!w||!r)return;
@@ -1777,6 +1778,19 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
         (Math.abs(newScore-curScore)<0.01&&(w>cur.weight||(w===cur.weight&&r>cur.reps)));
       if(isBetter){np[exId]={weight:w,reps:r,date:new Date().toISOString()};tr.add(exId);}
     }));
+    // Hold back any new PB that looks mis-keyed, to confirm in the end-of-session brief
+    const pend=[];
+    [...tr].forEach(exId=>{
+      const nw=np[exId],prev=base[exId];
+      const suspicious=nw.reps>40||(prev&&(nw.reps>prev.reps*2.5||nw.weight>prev.weight*2.5));
+      if(suspicious){
+        const e=exMap[exId];
+        pend.push({id:exId,name:e?.name||exId,weight:nw.weight,reps:nw.reps,date:nw.date,prevWeight:prev?prev.weight:null,prevReps:prev?prev.reps:null});
+        if(prev)np[exId]=prev;else delete np[exId];
+        tr.delete(exId);
+      }
+    });
+    setPendingPbs(pend);
     setNewPbIds(tr);
     // Store sets and notes separately to avoid crashing volume calculations
     const weekData={...(logs[plan.id]?.[week]||{}),[dayIdx]:sets};
@@ -1806,6 +1820,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
     }catch{}
     setSummaryLoading(false);
   };
+  const keepPb=p=>{onSavePbs({...pbs,[p.id]:{weight:p.weight,reps:p.reps,date:p.date}});setPendingPbs(l=>l.filter(x=>x.id!==p.id));};
+  const discardPb=id=>setPendingPbs(l=>l.filter(x=>x.id!==id));
   return(<div style={{...base}}>
     <div style={{padding:"12px 14px",paddingTop:"calc(env(safe-area-inset-top, 0px) + 12px)",borderBottom:"1px solid #e4ded4",background:C.surfaceAlt,flexShrink:0}}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1865,6 +1881,27 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
                 style={{...setInp,borderColor:s.reps?C.orangeBg:C.lineStrong}}/>
               <div style={{textAlign:"center",fontSize:12,color:C.textMute}}>{p?.weight?<><span style={{color:C.text,fontWeight:600}}>{p.weight}</span><br/><span style={{fontSize:11}}>{p.reps}r</span></>:"—"}</div>
             </div>);})}
+          {(()=>{const vol=a=>(a||[]).reduce((t,x)=>t+(parseFloat(x?.weight)||0)*(parseInt(x?.reps)||0),0);
+            const prevVol=Math.round(vol(prevSets)),curVol=Math.round(vol(exSets));
+            if(!prevVol&&!curVol)return null;
+            const beaten=prevVol>0&&curVol>prevVol,level=prevVol>0&&curVol===prevVol,gap=prevVol-curVol;
+            const pct=prevVol>0?Math.min(100,Math.round(curVol/prevVol*100)):100;
+            const col=beaten?C.green:level?C.gold:C.orange;
+            return(<div style={{padding:"9px 14px 11px",borderTop:"1px solid #efe9e1",background:C.surfaceAlt}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:prevVol>0?6:0}}>
+                <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:0.5}}>VOLUME</div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,color:C.text}}>
+                  <span style={{color:col}}>{curVol.toLocaleString("en-GB")}kg</span>
+                  {prevVol>0&&<span style={{color:C.textMute,fontWeight:500}}> / last {prevVol.toLocaleString("en-GB")}kg</span>}
+                </div>
+              </div>
+              {prevVol>0&&<>
+                <div style={{height:6,borderRadius:3,background:C.field,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:col,borderRadius:3,transition:"width .25s ease"}}/></div>
+                <div style={{fontSize:11,color:col,fontWeight:600,marginTop:5,textAlign:"right"}}>
+                  {beaten?`Beaten by ${(curVol-prevVol).toLocaleString("en-GB")}kg`:level?"Level with last time":`${gap.toLocaleString("en-GB")}kg to beat last time`}
+                </div>
+              </>}
+            </div>);})()}
         </div>);
       })}
       <div style={{padding:"8px 12px 4px"}}>
@@ -1898,7 +1935,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
     {exerciseInfo&&<ExerciseInfoPanel name={exerciseInfo.name} muscle={exerciseInfo.muscle} onClose={()=>setExerciseInfo(null)}/>}
 
     {/* Post-workout summary modal */}
-    {(summaryLoading||summary)&&(
+    {(summaryLoading||summary||pendingPbs.length>0)&&(
       <div style={{position:"fixed",inset:0,zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:"rgba(0,0,0,0.75)"}}>
         <div style={{background:C.surface,border:"1px solid #e8621a",borderRadius:16,padding:24,maxWidth:440,width:"100%",boxShadow:"0 8px 40px rgba(0,0,0,0.7)"}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
@@ -1908,6 +1945,22 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
               <div style={{fontSize:11,color:C.textMute}}>{day.name} · Week {week}</div>
             </div>
           </div>
+          {pendingPbs.length>0&&(
+            <div style={{background:C.goldBg,border:"1px solid #e8c46a",borderRadius:10,padding:14,marginBottom:18}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,color:C.text,marginBottom:2}}>QUICK CHECK</div>
+              <div style={{fontSize:12,color:C.textMute}}>{pendingPbs.length>1?"These look high for a new best. Were they real sets?":"This looks high for a new best. Was it a real set?"}</div>
+              {pendingPbs.map(p=>(
+                <div key={p.id} style={{borderTop:"1px solid #e8c46a",paddingTop:10,marginTop:10}}>
+                  <div style={{fontWeight:700,fontSize:14,color:C.text}}>{p.name}</div>
+                  <div style={{fontSize:12,color:C.textMute,marginBottom:8}}>{p.weight}kg × {p.reps} reps{p.prevReps!=null?` · previous best ${p.prevWeight}kg × ${p.prevReps}`:""}</div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button style={{flex:1,padding:"9px",border:"none",borderRadius:7,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.3,textTransform:"uppercase",background:C.green,color:"white"}} onClick={()=>keepPb(p)}>Real, keep it</button>
+                    <button style={{flex:1,padding:"9px",border:"1px solid #d8d0c4",borderRadius:7,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.3,textTransform:"uppercase",background:C.surface,color:C.textMute}} onClick={()=>discardPb(p.id)}>Not real</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {summaryLoading&&(
             <div style={{display:"flex",alignItems:"center",gap:10,padding:"20px 0",color:C.textMute,fontSize:13}}>
               <span style={{display:"inline-block",width:16,height:16,border:"2px solid #d8d0c4",borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
@@ -1915,12 +1968,12 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onBack}){
             </div>
           )}
           {summary&&!summaryLoading&&(
-            <>
-              <div style={{fontSize:14,color:C.text,lineHeight:1.7,marginBottom:20}}>{summary}</div>
-              <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"13px",background:C.orange,color:"white"}} onClick={()=>{setSummary(null);onBack();}}>
-                Nice one — Back to Training
-              </button>
-            </>
+            <div style={{fontSize:14,color:C.text,lineHeight:1.7,marginBottom:20}}>{summary}</div>
+          )}
+          {!summaryLoading&&(
+            <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"13px",background:C.orange,color:"white"}} onClick={()=>{setSummary(null);setPendingPbs([]);onBack();}}>
+              {pendingPbs.length>0?"Done":"Nice one, back to training"}
+            </button>
           )}
         </div>
       </div>
