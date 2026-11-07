@@ -1731,6 +1731,28 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
     setNewPbIds(n=>{n.delete(exId);return new Set(n);});
   };
 
+  // Extra sets beyond the plan carry extra:true so next week can show the volume needed an added set
+  const addExtraSet=(exId)=>{
+    setSaved(false);
+    setSets(p=>{
+      const cur=p[exId]||[];
+      const last=[...cur].reverse().find(x=>x.weight);
+      const updated={...p,[exId]:[...cur,{weight:last?.weight||"",reps:"",extra:true}]};
+      saveDraft(updated,sessionNotes);
+      return updated;
+    });
+  };
+  const removeExtraSet=(exId,si)=>{
+    setSaved(false);
+    setSets(p=>{
+      const cur=p[exId]||[];
+      if(!cur[si]?.extra)return p;
+      const updated={...p,[exId]:cur.filter((_,i)=>i!==si)};
+      saveDraft(updated,sessionNotes);
+      return updated;
+    });
+    setNewPbIds(n=>{n.delete(exId);return new Set(n);});
+  };
   const openSwapSession=async(originalId,muscle,name)=>{
     setSwappingEx({originalId,muscle,name});
     setSwapSuggestions([]);setSwapBrowse(false);setSwapLoading(true);
@@ -1808,7 +1830,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
     const prevVol=prevDayLog?Object.values(prevDayLog).filter(Array.isArray).reduce((t,s)=>t+s.reduce((a,st)=>a+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0),0):0;
     const thisVol=Object.values(sets).filter(Array.isArray).reduce((t,s)=>t+s.reduce((a,st)=>a+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0),0);
     const newPbList=[...tr].map(id=>{const e=exMap[id];const pb=np[id];return e&&pb?{name:e.name,weight:pb.weight,reps:pb.reps,orm:est1RM(pb.weight,pb.reps)}:null}).filter(Boolean);
-    const exSummary=day.exercises.map(ex=>{const activeId=swappedExercises[ex.exerciseId]||ex.exerciseId;const e=exMap[activeId];const exSets=sets[activeId]||[];const logged=exSets.filter(s=>s.weight&&s.reps);return logged.length?`${e?.name}: ${logged.map(s=>`${s.weight}kg×${s.reps}`).join(', ')}`:null;}).filter(Boolean).join(' | ');
+    const exSummary=day.exercises.map(ex=>{const activeId=swappedExercises[ex.exerciseId]||ex.exerciseId;const e=exMap[activeId];const exSets=sets[activeId]||[];const logged=exSets.filter(s=>s.weight&&s.reps);return logged.length?`${e?.name}: ${logged.map(s=>`${s.weight}kg×${s.reps}${s.extra?" (extra set)":""}`).join(', ')}`:null;}).filter(Boolean).join(' | ');
     try{
       const r=await fetch("/api/session-summary",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
         planName:plan.name,dayName:day.name,week,
@@ -1870,7 +1892,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
           </div>
           {exSets.map((s,si)=>{const lbl=labels[si],p=prevSets[si];return(
             <div key={si} style={{display:"grid",gridTemplateColumns:"32px 1fr 1fr 56px",gap:6,alignItems:"center",padding:"7px 12px",borderTop:"1px solid #efe9e1",background:s.weight&&s.reps?C.orangeBg:"transparent"}}>
-              <div style={{textAlign:"center"}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:C.textMute}}>{si+1}</div>{lbl?.reps&&<div style={{fontSize:9,color:C.textMute,fontWeight:600}}>{lbl.reps}</div>}</div>
+              <div style={{textAlign:"center"}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:s.extra?C.gold:C.textMute}}>{si+1}</div>{s.extra?<div onClick={()=>removeExtraSet(activeId,si)} title="Remove this extra set" style={{fontSize:9,color:C.gold,fontWeight:700,cursor:"pointer",lineHeight:1.2}}>EXTRA ×</div>:lbl?.reps&&<div style={{fontSize:9,color:C.textMute,fontWeight:600}}>{lbl.reps}</div>}</div>
               <input type="number" inputMode="decimal" min="0" step="0.5" placeholder="kg" value={s.weight}
                 onFocus={e=>e.target.select()}
                 onChange={e=>updateSet(activeId,si,"weight",e.target.value)}
@@ -1881,8 +1903,13 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
                 style={{...setInp,borderColor:s.reps?C.orangeBg:C.lineStrong}}/>
               <div style={{textAlign:"center",fontSize:12,color:C.textMute}}>{p?.weight?<><span style={{color:C.text,fontWeight:600}}>{p.weight}</span><br/><span style={{fontSize:11}}>{p.reps}r</span></>:"—"}</div>
             </div>);})}
+          <div style={{padding:"6px 12px 8px",borderTop:"1px solid #efe9e1"}}>
+            <button onClick={()=>addExtraSet(activeId)} style={{width:"100%",padding:"7px",border:"1px dashed #d8d0c4",borderRadius:7,background:"transparent",cursor:"pointer",color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5}}>+ ADD SET</button>
+          </div>
           {(()=>{const vol=a=>(a||[]).reduce((t,x)=>t+(parseFloat(x?.weight)||0)*(parseInt(x?.reps)||0),0);
             const prevVol=Math.round(vol(prevSets)),curVol=Math.round(vol(exSets));
+            const xtra=a=>(a||[]).filter(x=>x?.extra&&parseFloat(x.weight)&&parseInt(x.reps)).length;
+            const prevX=xtra(prevSets),curX=xtra(exSets);
             if(!prevVol&&!curVol)return null;
             const beaten=prevVol>0&&curVol>prevVol,level=prevVol>0&&curVol===prevVol,gap=prevVol-curVol;
             const pct=prevVol>0?Math.min(100,Math.round(curVol/prevVol*100)):100;
@@ -1895,6 +1922,9 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
                   {prevVol>0&&<span style={{color:C.textMute,fontWeight:500}}> / last {prevVol.toLocaleString("en-GB")}kg</span>}
                 </div>
               </div>
+              {(prevX>0||curX>0)&&<div style={{fontSize:11,color:C.gold,fontWeight:600,marginBottom:6}}>
+                {prevX>0?`Last time used ${prevX} extra set${prevX>1?"s":""} to hit that`:""}{prevX>0&&curX>0?" · ":""}{curX>0?`${curX} extra set${curX>1?"s":""} today`:""}
+              </div>}
               {prevVol>0&&<>
                 <div style={{height:6,borderRadius:3,background:C.field,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:col,borderRadius:3,transition:"width .25s ease"}}/></div>
                 <div style={{fontSize:11,color:col,fontWeight:600,marginTop:5,textAlign:"right"}}>
