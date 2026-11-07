@@ -435,7 +435,7 @@ function MainApp({session,onLogout}){
   const exMap=Object.fromEntries((exercises||[]).map(e=>[e.id,e]));
 
   if(!ready)return(<><style>{css}</style><div style={{...base,alignItems:"center",justifyContent:"center",gap:8}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,letterSpacing:2,color:C.orange}}>SYNCING…</div><div style={{fontSize:12,color:C.textMute}}>Loading your data</div></div></>);
-  if(sessionDay!==null)return(<><style>{css}</style><SessionLogger day={activePlan?.days[sessionDay]} dayIdx={sessionDay} plan={activePlan} week={currentWeek} logs={logs} pbs={pbs} exMap={exMap} onLog={async(nl,np)=>{await saveLogs(nl);await savePbs(np);}} onSavePbs={savePbs} onBack={()=>setSessionDay(null)}/></>);
+  if(sessionDay!==null)return(<><style>{css}</style><SessionLogger day={activePlan?.days[sessionDay]} dayIdx={sessionDay} plan={activePlan} week={currentWeek} logs={logs} pbs={pbs} exMap={exMap} onLog={async(nl,np)=>{await saveLogs(nl);await savePbs(np);}} onSavePbs={savePbs} onReorder={exs=>savePlans(prev=>prev.map(p=>p.id!==activePlan.id?p:{...p,days:p.days.map((d,i)=>i!==sessionDay?d:{...d,exercises:exs})}))} onBack={()=>setSessionDay(null)}/></>);
 
   const TABS=[["home","HOME",Ic.home],["daily","DAILY",Ic.daily],["today","TRAIN",Ic.today],["plans","PLANS",Ic.plan],["pbs","PBs",Ic.trophy],["exercises","EXERCISES",Ic.dumbbell],["calories","CALS",Ic.calories],["pics","PICS",Ic.camera],["cardio","CARDIO",Ic.cardio],["running","RUN",Ic.run]];
 
@@ -1466,6 +1466,7 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
       delete weekData[`${dayIdx}_notes`];
       delete weekData[`${dayIdx}_nextNote`];
       delete weekData[`${dayIdx}_swaps`];
+      delete weekData[`${dayIdx}_added`];
       updated[planId]={...updated[planId],[week]:weekData};
       onSaveLogs(updated);
     }
@@ -1623,7 +1624,7 @@ function RestTimer(){
 }
 
 // ─── Session Logger ───────────────────────────────────────────────────────────
-function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBack}){
+function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onReorder,onBack}){
   const existing=logs?.[plan.id]?.[week]?.[dayIdx]||{};
   const existingSwaps=logs?.[plan.id]?.[week]?.[`${dayIdx}_swaps`]||{};
 
@@ -1700,6 +1701,13 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
     const activeId=initSwaps[ex.exerciseId];
     if(activeId&&activeId!==ex.exerciseId)initSets[activeId]=build(activeId);
   });
+  // Exercises added at the end of a session are one-offs, saved under `${dayIdx}_added` as {ids:[...]}
+  const initAdded=savedDraft?.added||logs?.[plan.id]?.[week]?.[`${dayIdx}_added`]?.ids||[];
+  const newRowsFor=(id)=>{const prevA=getPrevForExercise(id);const n=prevA.filter(x=>!x.extra).length||3;
+    return Array(n).fill(null).map((_,si)=>({weight:prevA[si]?.weight||"",reps:"",carriedOver:!!(prevA[si]?.weight)}));};
+  initAdded.forEach(id=>{if(!initSets[id])initSets[id]=savedDraft?.sets?.[id]||existing[id]||newRowsFor(id);});
+  // What was added last time this day was trained (most recent non-skipped week), to offer again
+  const lastAdded=(()=>{for(let w=week-1;w>=1;w--){const d=planLogsAll[w]?.[dayIdx];if(!d||d._skipped)continue;return planLogsAll[w]?.[`${dayIdx}_added`]?.ids||[];}return [];})();
   const initNotes=savedDraft?.notes||(logs?.[plan.id]?.[week]?.[`${dayIdx}_notes`]||"");
   const [sets,setSets]=useState(initSets);
   const [newPbIds,setNewPbIds]=useState(new Set());
@@ -1717,8 +1725,15 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
   const [swapSuggestions,setSwapSuggestions]=useState([]);
   const [swapLoading,setSwapLoading]=useState(false);
   const [swapBrowse,setSwapBrowse]=useState(false);
-  const saveDraft=(newSets,notes,swaps,nn)=>{
-    try{localStorage.setItem(draftKey,JSON.stringify({sets:newSets,notes,swapped:swaps??swappedExercises,nextNote:nn??nextNote,ts:Date.now()}));}catch{}
+  const [addedIds,setAddedIds]=useState(initAdded);
+  const [dismissedSugg,setDismissedSugg]=useState([]);
+  const [addingEx,setAddingEx]=useState(false);
+  const [addSearch,setAddSearch]=useState("");
+  const sessionExercises=[...day.exercises,...addedIds.map(id=>({exerciseId:id,setConfigs:[{sets:3,repsRange:"",note:""}],added:true}))];
+  const inSessionIds=new Set(sessionExercises.map(x=>x.added?x.exerciseId:(swappedExercises[x.exerciseId]||x.exerciseId)));
+  const suggestions=lastAdded.filter(id=>exMap[id]&&!inSessionIds.has(id)&&!dismissedSugg.includes(id));
+  const saveDraft=(newSets,notes,swaps,nn,ad)=>{
+    try{localStorage.setItem(draftKey,JSON.stringify({sets:newSets,notes,swapped:swaps??swappedExercises,nextNote:nn??nextNote,added:ad??addedIds,ts:Date.now()}));}catch{}
   };
 
   const updateSet=(exId,si,field,val)=>{
@@ -1752,6 +1767,31 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
       return updated;
     });
     setNewPbIds(n=>{n.delete(exId);return new Set(n);});
+  };
+  const addExercise=(id)=>{
+    setAddingEx(false);setAddSearch("");
+    if(inSessionIds.has(id))return;
+    setSaved(false);
+    const newSets=sets[id]?sets:{...sets,[id]:newRowsFor(id)};
+    const newAdded=[...addedIds,id];
+    setSets(newSets);setAddedIds(newAdded);
+    saveDraft(newSets,sessionNotes,undefined,undefined,newAdded);
+  };
+  const removeAdded=(id)=>{
+    if((sets[id]||[]).some(x=>x.reps)&&!window.confirm("Remove this exercise and the sets you've logged for it?"))return;
+    setSaved(false);
+    const newSets={...sets};delete newSets[id];
+    const newAdded=addedIds.filter(x=>x!==id);
+    setSets(newSets);setAddedIds(newAdded);
+    saveDraft(newSets,sessionNotes,undefined,undefined,newAdded);
+    setNewPbIds(n=>{n.delete(id);return new Set(n);});
+  };
+  // Moving an exercise reorders this day in the plan itself, so the order sticks for every week after.
+  // Safe for history: logs are stored by exercise id, never by position.
+  const moveExercise=(i,dir)=>{
+    const j=i+dir;if(!onReorder||j<0||j>=day.exercises.length)return;
+    const exs=[...day.exercises];[exs[i],exs[j]]=[exs[j],exs[i]];
+    onReorder(exs);
   };
   const openSwapSession=async(originalId,muscle,name)=>{
     setSwappingEx({originalId,muscle,name});
@@ -1820,6 +1860,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
     if(nextNote.trim())weekData[`${dayIdx}_nextNote`]=nextNote;else delete weekData[`${dayIdx}_nextNote`];
     // Persist swap mapping so it shows correctly when reopening the session
     if(Object.keys(swappedExercises).length>0)weekData[`${dayIdx}_swaps`]=swappedExercises;
+    if(addedIds.length)weekData[`${dayIdx}_added`]={ids:addedIds};else delete weekData[`${dayIdx}_added`];
     await onLog({...logs,[plan.id]:{...(logs[plan.id]||{}),[week]:weekData}},np);
     try{localStorage.removeItem(draftKey);}catch{}
     setSaved(true);
@@ -1830,7 +1871,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
     const prevVol=prevDayLog?Object.values(prevDayLog).filter(Array.isArray).reduce((t,s)=>t+s.reduce((a,st)=>a+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0),0):0;
     const thisVol=Object.values(sets).filter(Array.isArray).reduce((t,s)=>t+s.reduce((a,st)=>a+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0),0);
     const newPbList=[...tr].map(id=>{const e=exMap[id];const pb=np[id];return e&&pb?{name:e.name,weight:pb.weight,reps:pb.reps,orm:est1RM(pb.weight,pb.reps)}:null}).filter(Boolean);
-    const exSummary=day.exercises.map(ex=>{const activeId=swappedExercises[ex.exerciseId]||ex.exerciseId;const e=exMap[activeId];const exSets=sets[activeId]||[];const logged=exSets.filter(s=>s.weight&&s.reps);return logged.length?`${e?.name}: ${logged.map(s=>`${s.weight}kg×${s.reps}${s.extra?" (extra set)":""}`).join(', ')}`:null;}).filter(Boolean).join(' | ');
+    const exSummary=sessionExercises.map(ex=>{const activeId=ex.added?ex.exerciseId:(swappedExercises[ex.exerciseId]||ex.exerciseId);const e=exMap[activeId];const exSets=sets[activeId]||[];const logged=exSets.filter(s=>s.weight&&s.reps);return logged.length?`${e?.name}: ${logged.map(s=>`${s.weight}kg×${s.reps}${s.extra?" (extra set)":""}`).join(', ')}`:null;}).filter(Boolean).join(' | ');
     try{
       const r=await fetch("/api/session-summary",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
         planName:plan.name,dayName:day.name,week,
@@ -1859,8 +1900,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
         <div><div style={{fontSize:10,fontWeight:700,letterSpacing:0.5,color:C.gold,textTransform:"uppercase",marginBottom:2}}>Note from Week {week-1}</div>
           <div style={{fontSize:13,color:C.text,lineHeight:1.4,whiteSpace:"pre-wrap"}}>{prevNextNote}</div></div>
       </div>}
-      {day.exercises.map(ex=>{
-        const activeId=swappedExercises[ex.exerciseId]||ex.exerciseId;
+      {sessionExercises.map((ex,pi)=>{
+        const activeId=ex.added?ex.exerciseId:(swappedExercises[ex.exerciseId]||ex.exerciseId);
         const e=exMap[activeId];if(!e)return null;
         const isSwapped=activeId!==ex.exerciseId;
         const pb=pbs[activeId],prevSets=prevByExercise[activeId]||getPrevForExercise(activeId),isNewPb=newPbIds.has(activeId),exSets=sets[activeId]||[];
@@ -1870,16 +1911,24 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
               <div style={{flex:1}}>
                 {isSwapped&&<div style={{fontSize:9,color:C.orange,fontWeight:700,letterSpacing:0.5,marginBottom:2}}>⇄ SWAPPED THIS SESSION</div>}
+                {ex.added&&<div style={{fontSize:9,color:C.blue,fontWeight:700,letterSpacing:0.5,marginBottom:2}}>+ ADDED THIS SESSION</div>}
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:18,color:C.text,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>setExerciseInfo({name:e.name,muscle:e.muscle})}>
                   {e.name}
                   <span style={{fontSize:10,background:C.orangeBg,border:"1px solid #fae7d8",borderRadius:4,padding:"2px 6px",color:C.orange,fontFamily:"'Barlow',sans-serif",fontWeight:600,letterSpacing:0.3}}>HOW TO</span>
                 </div>
                 <MuscleChip muscle={e.muscle}/>
               </div>
-              <button onClick={()=>openSwapSession(ex.exerciseId,exMap[ex.exerciseId]?.muscle||e.muscle,exMap[ex.exerciseId]?.name||e.name)}
+              {!ex.added&&day.exercises.length>1&&<div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0,marginTop:2}}>
+                <button aria-label="Move up" disabled={pi===0} onClick={()=>moveExercise(pi,-1)} style={{width:26,height:20,padding:0,border:"1px solid #e4ded4",borderRadius:5,background:C.field,cursor:"pointer",color:C.textMute,fontSize:10,lineHeight:1,opacity:pi===0?0.35:1}}>▲</button>
+                <button aria-label="Move down" disabled={pi===day.exercises.length-1} onClick={()=>moveExercise(pi,1)} style={{width:26,height:20,padding:0,border:"1px solid #e4ded4",borderRadius:5,background:C.field,cursor:"pointer",color:C.textMute,fontSize:10,lineHeight:1,opacity:pi===day.exercises.length-1?0.35:1}}>▼</button>
+              </div>}
+              {ex.added?<button onClick={()=>removeAdded(ex.exerciseId)}
+                style={{background:C.redBg,border:"1px solid #f8e0e0",borderRadius:6,padding:"5px 9px",cursor:"pointer",color:C.red,fontSize:11,fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5,flexShrink:0,marginTop:2}}>
+                REMOVE
+              </button>:<button onClick={()=>openSwapSession(ex.exerciseId,exMap[ex.exerciseId]?.muscle||e.muscle,exMap[ex.exerciseId]?.name||e.name)}
                 style={{background:C.orangeBg,border:"1px solid #fae7d8",borderRadius:6,padding:"5px 9px",cursor:"pointer",color:C.orange,fontSize:11,fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5,flexShrink:0,marginTop:2}}>
                 {"⇄"} SWAP
-              </button>
+              </button>}
               <div style={{flexShrink:0}}>
                 {isNewPb?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.orange,borderRadius:4,padding:"3px 8px",fontSize:11,color:C.text,fontWeight:700,animation:"pop .3s ease"}}>{Ic.fire} NEW PB!</span>
                 :pb?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.orangeBg,border:"1px solid #dff0e4",borderRadius:4,padding:"3px 8px",fontSize:11,color:C.orange,fontWeight:600}}>{Ic.trophy} {pb.weight}kg × {pb.reps}</span>
@@ -1934,6 +1983,17 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
             </div>);})()}
         </div>);
       })}
+      <div style={{padding:"4px 12px 10px"}}>
+        {suggestions.length>0&&<div style={{background:C.blueBg,border:"1px solid #c7dbf3",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:0.5,color:C.blue,textTransform:"uppercase",marginBottom:2}}>Last time you added</div>
+          {suggestions.map(id=><div key={id} style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+            <div style={{flex:1,fontWeight:600,fontSize:14,color:C.text}}>{exMap[id].name}</div>
+            <button onClick={()=>addExercise(id)} style={{padding:"6px 10px",border:"none",borderRadius:6,cursor:"pointer",background:C.blue,color:"white",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.3}}>ADD AGAIN</button>
+            <button onClick={()=>setDismissedSugg(d=>[...d,id])} style={{padding:"6px 10px",border:"1px solid #d8d0c4",borderRadius:6,cursor:"pointer",background:C.surface,color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.3}}>NOT TODAY</button>
+          </div>)}
+        </div>}
+        <button onClick={()=>setAddingEx(true)} style={{width:"100%",padding:"10px",border:"1px dashed #2f7fd6",borderRadius:8,background:"transparent",cursor:"pointer",color:C.blue,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5}}>+ ADD EXERCISE</button>
+      </div>
       <div style={{padding:"8px 12px 4px"}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.gold,textTransform:"uppercase",marginBottom:6}}>📝 Notes for Next Session</div>
         <textarea
@@ -1963,6 +2023,34 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onBa
       </div>
     )}
     {exerciseInfo&&<ExerciseInfoPanel name={exerciseInfo.name} muscle={exerciseInfo.muscle} onClose={()=>setExerciseInfo(null)}/>}
+    {addingEx&&(()=>{
+      const q=addSearch.trim().toLowerCase();
+      const list=Object.values(exMap).filter(e=>!inSessionIds.has(e.id)&&(!q||e.name.toLowerCase().includes(q)||(e.muscle||"").toLowerCase().includes(q)))
+        .sort((a,b)=>(a.muscle||"").localeCompare(b.muscle||"")||a.name.localeCompare(b.name));
+      return(<div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.7)"}} onClick={()=>{setAddingEx(false);setAddSearch("");}}/>
+        <div style={{position:"relative",background:C.surface,borderRadius:"18px 18px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
+          <div style={{padding:"12px 18px 10px",borderBottom:"1px solid #e4ded4",flexShrink:0}}>
+            <div style={{width:36,height:4,background:C.lineStrong,borderRadius:2,margin:"0 auto 12px"}}/>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+              <div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,color:C.text}}>ADD EXERCISE</div>
+                <div style={{fontSize:11,color:C.textMute}}>Just for this session. Next week it is offered again.</div>
+              </div>
+              <button onClick={()=>{setAddingEx(false);setAddSearch("");}} style={{background:C.field,border:"none",borderRadius:8,padding:"7px 10px",cursor:"pointer",color:C.textMute}}>{Ic.x}</button>
+            </div>
+            <input value={addSearch} onChange={e=>setAddSearch(e.target.value)} placeholder="Search by exercise or muscle" style={{...inp,fontSize:16}}/>
+          </div>
+          <div style={{overflowY:"auto",padding:"10px 16px 32px"}}>
+            {list.length===0?<div style={{textAlign:"center",padding:"20px 0",color:C.textMute,fontSize:13}}>No matches</div>:
+            <div style={card}>{list.map((e,i)=>(
+              <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid #e4ded4",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>addExercise(e.id)}>
+                <div style={{flex:1,fontWeight:500,fontSize:14,color:C.text}}>{e.name}</div>
+                <MuscleChip muscle={e.muscle}/>
+              </div>))}</div>}
+          </div>
+        </div>
+      </div>);})()}
 
     {/* Post-workout summary modal */}
     {(summaryLoading||summary||pendingPbs.length>0)&&(
