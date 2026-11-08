@@ -1664,9 +1664,20 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
           const dayData=pLogs[w][k];
           if(!dayData||dayData._skipped)continue;
           const sets=dayData[exerciseId];
-          if(Array.isArray(sets)&&sets.some(s=>s.weight))return sets;
+          if(Array.isArray(sets)&&sets.some(s=>s.weight)){const r=[...sets];r.fromOtherBlock=true;return r;}
         }
       }
+    }
+    return [];
+  };
+  // Volume target: only this block (plan), same day slot, most recent earlier week.
+  // Week 1 of a new block therefore starts with no target.
+  const getBlockPrev=(exerciseId)=>{
+    for(let w=week-1;w>=1;w--){
+      const dayData=planLogsAll[w]?.[dayIdx];
+      if(!dayData||dayData._skipped)continue;
+      const sets=dayData[exerciseId];
+      if(Array.isArray(sets)&&sets.some(s=>s.weight))return sets;
     }
     return [];
   };
@@ -1689,9 +1700,9 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
         savedDraft?.sets?.[id] ||   // restored from draft
         existing[id] ||             // already saved this session
         Array(total).fill(null).map((_,si)=>({
-          weight:prevSetsForEx[si]?.weight||"",
+          weight:prevSetsForEx.fromOtherBlock?"":(prevSetsForEx[si]?.weight||""),
           reps:"",
-          carriedOver:!!(prevSetsForEx[si]?.weight)
+          carriedOver:!prevSetsForEx.fromOtherBlock&&!!(prevSetsForEx[si]?.weight)
         }))
       );
     };
@@ -1704,7 +1715,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   // Exercises added at the end of a session are one-offs, saved under `${dayIdx}_added` as {ids:[...]}
   const initAdded=savedDraft?.added||logs?.[plan.id]?.[week]?.[`${dayIdx}_added`]?.ids||[];
   const newRowsFor=(id)=>{const prevA=getPrevForExercise(id);const n=prevA.filter(x=>!x.extra).length||3;
-    return Array(n).fill(null).map((_,si)=>({weight:prevA[si]?.weight||"",reps:"",carriedOver:!!(prevA[si]?.weight)}));};
+    return Array(n).fill(null).map((_,si)=>({weight:prevA.fromOtherBlock?"":(prevA[si]?.weight||""),reps:"",carriedOver:!prevA.fromOtherBlock&&!!(prevA[si]?.weight)}));};
   initAdded.forEach(id=>{if(!initSets[id])initSets[id]=savedDraft?.sets?.[id]||existing[id]||newRowsFor(id);});
   // What was added last time this day was trained (most recent non-skipped week), to offer again
   const lastAdded=(()=>{for(let w=week-1;w>=1;w--){const d=planLogsAll[w]?.[dayIdx];if(!d||d._skipped)continue;return planLogsAll[w]?.[`${dayIdx}_added`]?.ids||[];}return [];})();
@@ -1818,9 +1829,9 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
       const prevN=getPrevForExercise(newId);
       prevByExercise[newId]=prevN;
       newSets={...sets,[newId]:Array(total).fill(null).map((_,si)=>({
-        weight:prevN[si]?.weight||"",
+        weight:prevN.fromOtherBlock?"":(prevN[si]?.weight||""),
         reps:"",
-        carriedOver:!!(prevN[si]?.weight)
+        carriedOver:!prevN.fromOtherBlock&&!!(prevN[si]?.weight)
       }))};
       setSets(newSets);
     }
@@ -1937,7 +1948,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"32px 1fr 1fr 56px",gap:6,padding:"4px 12px",background:C.surface}}>
-            {["SET","KG","REPS","PREV"].map(h=><div key={h} style={{fontSize:10,color:C.textMute,fontWeight:700,textAlign:"center"}}>{h}</div>)}
+            {["SET","KG","REPS",prevSets.fromOtherBlock?"LAST BLOCK":"PREV"].map(h=><div key={h} style={{fontSize:h==="LAST BLOCK"?8:10,color:h==="LAST BLOCK"?C.textFaint:C.textMute,fontWeight:700,textAlign:"center",lineHeight:1.2}}>{h}</div>)}
           </div>
           {exSets.map((s,si)=>{const lbl=labels[si],p=prevSets[si];return(
             <div key={si} style={{display:"grid",gridTemplateColumns:"32px 1fr 1fr 56px",gap:6,alignItems:"center",padding:"7px 12px",borderTop:"1px solid #efe9e1",background:s.weight&&s.reps?C.orangeBg:"transparent"}}>
@@ -1950,15 +1961,16 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
                 onFocus={e=>e.target.select()}
                 onChange={e=>updateSet(activeId,si,"reps",e.target.value)}
                 style={{...setInp,borderColor:s.reps?C.orangeBg:C.lineStrong}}/>
-              <div style={{textAlign:"center",fontSize:12,color:C.textMute}}>{p?.weight?<><span style={{color:C.text,fontWeight:600}}>{p.weight}</span><br/><span style={{fontSize:11}}>{p.reps}r</span></>:"—"}</div>
+              <div style={{textAlign:"center",fontSize:12,color:prevSets.fromOtherBlock?C.textFaint:C.textMute}}>{p?.weight?<><span style={{color:prevSets.fromOtherBlock?C.textFaint:C.text,fontWeight:prevSets.fromOtherBlock?500:600}}>{p.weight}</span><br/><span style={{fontSize:11}}>{p.reps}r</span></>:"—"}</div>
             </div>);})}
           <div style={{padding:"6px 12px 8px",borderTop:"1px solid #efe9e1"}}>
             <button onClick={()=>addExtraSet(activeId)} style={{width:"100%",padding:"7px",border:"1px dashed #d8d0c4",borderRadius:7,background:"transparent",cursor:"pointer",color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5}}>+ ADD SET</button>
           </div>
           {(()=>{const vol=a=>(a||[]).reduce((t,x)=>t+(parseFloat(x?.weight)||0)*(parseInt(x?.reps)||0),0);
-            const prevVol=Math.round(vol(prevSets)),curVol=Math.round(vol(exSets));
+            const blockPrev=getBlockPrev(activeId);
+            const prevVol=Math.round(vol(blockPrev)),curVol=Math.round(vol(exSets));
             const xtra=a=>(a||[]).filter(x=>x?.extra&&parseFloat(x.weight)&&parseInt(x.reps)).length;
-            const prevX=xtra(prevSets),curX=xtra(exSets);
+            const prevX=xtra(blockPrev),curX=xtra(exSets);
             if(!prevVol&&!curVol)return null;
             const beaten=prevVol>0&&curVol>prevVol,level=prevVol>0&&curVol===prevVol,gap=prevVol-curVol;
             const pct=prevVol>0?Math.min(100,Math.round(curVol/prevVol*100)):100;
