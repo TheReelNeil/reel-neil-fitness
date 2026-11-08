@@ -126,8 +126,8 @@ const DEFAULT_EXERCISES = [
   {id:"n56",muscle:"Forearms",name:"Wrist Roller"},{id:"n57",muscle:"Forearms",name:"Dead Hang"},
 ];
 const MUSCLES = [...new Set(DEFAULT_EXERCISES.map(e=>e.muscle))];
-const C={bg:"#efe9e1",surface:"#ffffff",surfaceAlt:"#f6f3ee",field:"#ebe5dd",line:"#e4ded4",lineStrong:"#d8d0c4",text:"#2c2c30",textMute:"#8a857c",textFaint:"#a8a298",onDark:"#f6f3ee",orange:"#e8621a",orangeBg:"#fae7d8",green:"#1aa05f",greenBg:"#dff0e4",gold:"#c4901a",goldBg:"#f6ecd2",blue:"#2f7fd6",blueBg:"#dfeaf8",red:"#d64545",redBg:"#f8e0e0"};
-const MC = {Chest:"#d8542a",Back:"#168f7e",Shoulders:"#c47f1a",Biceps:"#c44d7e",Triceps:"#d2691e",Quads:"#1aa05f",Hamstrings:"#2f7fd6",Glutes:"#c4901a",Adductors:"#a93bbf",Calves:"#5f7186",Core:"#b8860b",Traps:"#1f93c4",Forearms:"#b3681a"};
+const C={bg:"#07070a",surface:"#141419",surfaceAlt:"#1b1b21",field:"rgba(255,255,255,0.07)",line:"rgba(255,255,255,0.10)",lineStrong:"rgba(255,255,255,0.18)",text:"#f5f5f7",textMute:"#a7a7b0",textFaint:"#8a8a94",onDark:"#0b0b0f",ink:"#160900",orange:"#ff7a2e",orangeBg:"rgba(255,122,46,0.16)",green:"#30d158",greenBg:"rgba(48,209,88,0.15)",gold:"#ffd60a",goldBg:"rgba(255,214,10,0.12)",blue:"#64d2ff",blueBg:"rgba(100,210,255,0.14)",red:"#ff453a",redBg:"rgba(255,69,58,0.14)",glass:"rgba(255,255,255,0.065)",glassBorder:"rgba(255,255,255,0.12)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.16)"};
+const MC = {Chest:"#ff8a65",Back:"#40d9c0",Shoulders:"#ffb340",Biceps:"#ff6fa8",Triceps:"#ff9f45",Quads:"#30d158",Hamstrings:"#64a8ff",Glutes:"#ffd60a",Adductors:"#d283ff",Calves:"#a9bccf",Core:"#f0c040",Traps:"#5ac8fa",Forearms:"#e8a868"};
 const est1RM = (w,r) => (!w||!r||r<=0)?0:r===1?w:Math.round(w*(1+r/30));
 const today = () => new Date().toISOString().slice(0,10);
 const fmtDate = d => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
@@ -159,32 +159,33 @@ const Ic = {
 };
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
-const css=`@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+const css=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);}
 html{height:100%;overflow:hidden;background:${C.surface};}
-body{background:${C.surface};color:${C.text};font-family:'Barlow',sans-serif;font-size:15px;line-height:1.4;overscroll-behavior:none;position:fixed;inset:0;width:100%;overflow:hidden;}
+body{background:${C.surface};color:${C.text};font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.4;overscroll-behavior:none;position:fixed;inset:0;width:100%;overflow:hidden;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:${C.lineStrong};border-radius:2px;}
-input,select{font-family:'Barlow',sans-serif;font-size:15px;outline:none;color:${C.text};}
+input,select{font-family:'Inter',system-ui,sans-serif;font-size:15px;outline:none;color:${C.text};}
 input[type=number]::-webkit-inner-spin-button{opacity:1;}
 @keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`;
 
 // Fixed shell sized by a JS-measured viewport height (--appH, set in App root) —
 // iOS standalone PWAs misreport the bottom edge, so we measure rather than anchor.
-const base={display:"flex",flexDirection:"column",position:"fixed",top:"var(--appTop, 0px)",left:0,right:0,height:"var(--appH, 100dvh)",maxWidth:480,margin:"0 auto",background:C.bg,overflow:"hidden"};
-const inp={background:C.field,border:`1px solid ${C.line}`,borderRadius:7,padding:"11px 14px",color:C.text,width:"100%",fontSize:15,boxSizing:"border-box"};
-const setInp={background:C.field,border:`1px solid ${C.line}`,borderRadius:6,padding:"8px 6px",color:C.text,textAlign:"center",width:"100%",fontSize:16};
-const card={background:C.surface,border:`1px solid ${C.line}`,borderRadius:10,marginBottom:10,overflow:"hidden"};
-const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"10px 16px",borderRadius:7,border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",
-  ...(v==="primary"?{background:C.text,color:C.onDark}:v==="ghost"?{background:"transparent",color:C.textMute,border:`1px solid ${C.line}`}:v==="danger"?{background:"transparent",color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
-const lbl={fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:C.textMute,display:"block",marginBottom:5};
-const statBox=(color=C.orange)=>({background:C.surfaceAlt,border:`1px solid ${color}33`,borderRadius:8,padding:"12px 14px",flex:1});
+const GLOW=`radial-gradient(circle at 95% 0%, rgba(255,106,26,0.42), transparent 38%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.20), transparent 40%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.14), transparent 42%), ${C.bg}`;
+const base={display:"flex",flexDirection:"column",position:"fixed",top:"var(--appTop, 0px)",left:0,right:0,height:"var(--appH, 100dvh)",maxWidth:480,margin:"0 auto",background:GLOW,overflow:"hidden"};
+const inp={background:C.field,border:`1px solid ${C.line}`,borderRadius:14,padding:"12px 14px",color:C.text,width:"100%",fontSize:16,boxSizing:"border-box"};
+const setInp={background:C.field,border:"1px solid transparent",borderRadius:21,padding:"10px 6px",height:42,color:C.text,textAlign:"center",width:"100%",fontSize:18,fontWeight:700,fontVariantNumeric:"tabular-nums"};
+const card={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:24,marginBottom:12,overflow:"hidden",boxShadow:C.glassHi,backdropFilter:"blur(22px) saturate(170%)",WebkitBackdropFilter:"blur(22px) saturate(170%)"};
+const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"11px 18px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,letterSpacing:0,minHeight:44,
+  ...(v==="primary"?{background:C.orange,color:C.ink,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.4)"}:v==="ghost"?{background:C.field,color:C.text,border:`1px solid ${C.line}`}:v==="danger"?{background:C.redBg,color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
+const lbl={fontSize:12,fontWeight:600,letterSpacing:0.4,textTransform:"uppercase",color:C.textMute,display:"block",marginBottom:6};
+const statBox=(color=C.orange)=>({background:C.glass,border:`1px solid ${color}33`,borderRadius:20,padding:"14px 16px",flex:1,boxShadow:C.glassHi});
 
-function MuscleChip({muscle}){return <span style={{fontSize:10,background:(MC[muscle]||C.textMute)+"22",color:MC[muscle]||C.textMute,padding:"2px 6px",borderRadius:3,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>{muscle}</span>;}
-function MuscleFilter({active,onChange}){return(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>{["All",...MUSCLES].map(m=><button key={m} onClick={()=>onChange(m)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",background:active===m?(MC[m]||C.orange):"transparent",color:active===m?C.onDark:C.textMute,borderColor:active===m?(MC[m]||C.orange):C.line}}>{m}</button>)}</div>);}
+function MuscleChip({muscle}){return <span style={{fontSize:11,background:(MC[muscle]||C.textMute)+"22",color:MC[muscle]||C.textMute,padding:"3px 9px",borderRadius:10,fontWeight:600,letterSpacing:0.2}}>{muscle}</span>;}
+function MuscleFilter({active,onChange}){return(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>{["All",...MUSCLES].map(m=><button key={m} onClick={()=>onChange(m)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",textTransform:"uppercase",background:active===m?(MC[m]||C.orange):"transparent",color:active===m?C.onDark:C.textMute,borderColor:active===m?(MC[m]||C.orange):C.line}}>{m}</button>)}</div>);}
 function Divider(){return <div style={{height:1,background:C.line,margin:"4px 0"}}/>;}
-function SectionHead({label}){return <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1.5,color:C.textMute,textTransform:"uppercase",marginBottom:10,marginTop:4}}>{label}</div>;}
+function SectionHead({label}){return <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:11,letterSpacing:1.5,color:C.textMute,textTransform:"uppercase",marginBottom:10,marginTop:4}}>{label}</div>;}
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App(){
@@ -231,7 +232,7 @@ export default function App(){
   },[]);
   const handleAuth=useCallback(async s=>{setSession(s);await storeSession(s);},[]);
   const handleLogout=useCallback(async()=>{if(session?.token)await sbSignOut(session.token);await clearSession();setSession(null);},[session]);
-  if(booting)return(<><style>{css}</style><div style={{...base,alignItems:"center",justifyContent:"center"}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:28,fontWeight:800,letterSpacing:3,color:C.orange}}>LOADING…</div></div></>);
+  if(booting)return(<><style>{css}</style><div style={{...base,alignItems:"center",justifyContent:"center"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:28,fontWeight:800,letterSpacing:3,color:C.orange}}>LOADING…</div></div></>);
   if(!session)return <AuthScreen onAuth={handleAuth}/>;
   return <MainApp session={session} onLogout={handleLogout}/>;
 }
@@ -263,21 +264,21 @@ function AuthScreen({onAuth}){
     <div style={{...base,alignItems:"center",justifyContent:"center",padding:"0 24px"}}>
       <div style={{width:"100%",maxWidth:360,animation:"fadeIn .4s ease"}}>
         <div style={{textAlign:"center",marginBottom:36}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:34,letterSpacing:2,color:C.orange,lineHeight:1}}>THE REEL NEIL</div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:400,fontSize:16,letterSpacing:5,color:C.textMute,textTransform:"uppercase",marginTop:4}}>Fitness</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:34,letterSpacing:2,color:C.orange,lineHeight:1}}>THE REEL NEIL</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:400,fontSize:16,letterSpacing:5,color:C.textMute,textTransform:"uppercase",marginTop:4}}>Fitness</div>
           <a href="https://www.instagram.com/the_reel_neil" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:7,marginTop:14,padding:"7px 16px",borderRadius:20,background:"linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)",textDecoration:"none"}}>
             <span style={{fontSize:13}}>{"📸"}</span>
-            <span style={{fontSize:12,fontWeight:700,color:"white",letterSpacing:0.5,fontFamily:"'Barlow',sans-serif"}}>{"@the_reel_neil"}</span>
+            <span style={{fontSize:12,fontWeight:700,color:"white",letterSpacing:0.5,fontFamily:"'Inter',system-ui,sans-serif"}}>{"@the_reel_neil"}</span>
           </a>
         </div>
-        <div style={{display:"flex",background:C.surface,border:"1px solid #e4ded4",borderRadius:8,marginBottom:22,padding:3}}>
-          {["login","register"].map(m=><button key={m} onClick={()=>{setMode(m);setError("");}} style={{flex:1,padding:"9px",border:"none",borderRadius:6,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:mode===m?C.orange:"transparent",color:mode===m?C.text:C.textMute}}>{m==="login"?"Sign In":"Register"}</button>)}
+        <div style={{display:"flex",background:C.surface,border:"1px solid rgba(255,255,255,0.10)",borderRadius:8,marginBottom:22,padding:3}}>
+          {["login","register"].map(m=><button key={m} onClick={()=>{setMode(m);setError("");}} style={{flex:1,padding:"9px",border:"none",borderRadius:6,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:mode===m?C.orange:"transparent",color:mode===m?C.text:C.textMute}}>{m==="login"?"Sign In":"Register"}</button>)}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <div><label style={lbl}>Email</label><input style={inp} type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
           <div><label style={lbl}>Password</label><input style={inp} type="password" placeholder="Min. 6 characters" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>
           {mode==="register"&&<div><label style={lbl}>Confirm Password</label><input style={inp} type="password" placeholder="Repeat password" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}/></div>}
-          {error&&<div style={{background:C.redBg,border:"1px solid #f8e0e0",borderRadius:7,padding:"10px 14px",fontSize:13,color:C.red}}>{error}</div>}
+          {error&&<div style={{background:C.redBg,border:"1px solid rgba(255,69,58,0.28)",borderRadius:7,padding:"10px 14px",fontSize:13,color:C.red}}>{error}</div>}
           <button style={{...btn("primary"),justifyContent:"center",padding:"13px",marginTop:2}} onClick={submit} disabled={loading}>{loading?"Please wait…":mode==="login"?"Sign In":"Create Account"}</button>
         </div>
       </div>
@@ -434,36 +435,36 @@ function MainApp({session,onLogout}){
   const activePlan=plans?.find(p=>p.id===activePlanId);
   const exMap=Object.fromEntries((exercises||[]).map(e=>[e.id,e]));
 
-  if(!ready)return(<><style>{css}</style><div style={{...base,alignItems:"center",justifyContent:"center",gap:8}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,letterSpacing:2,color:C.orange}}>SYNCING…</div><div style={{fontSize:12,color:C.textMute}}>Loading your data</div></div></>);
+  if(!ready)return(<><style>{css}</style><div style={{...base,alignItems:"center",justifyContent:"center",gap:8}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:22,fontWeight:800,letterSpacing:2,color:C.orange}}>SYNCING…</div><div style={{fontSize:12,color:C.textMute}}>Loading your data</div></div></>);
   if(sessionDay!==null)return(<><style>{css}</style><SessionLogger day={activePlan?.days[sessionDay]} dayIdx={sessionDay} plan={activePlan} week={currentWeek} logs={logs} pbs={pbs} exMap={exMap} onLog={async(nl,np)=>{await saveLogs(nl);await savePbs(np);}} onSavePbs={savePbs} onReorder={exs=>savePlans(prev=>prev.map(p=>p.id!==activePlan.id?p:{...p,days:p.days.map((d,i)=>i!==sessionDay?d:{...d,exercises:exs})}))} onBack={()=>setSessionDay(null)}/></>);
 
   const TABS=[["home","HOME",Ic.home],["daily","DAILY",Ic.daily],["today","TRAIN",Ic.today],["plans","PLANS",Ic.plan],["pbs","PBs",Ic.trophy],["exercises","EXERCISES",Ic.dumbbell],["calories","CALS",Ic.calories],["pics","PICS",Ic.camera],["cardio","CARDIO",Ic.cardio],["running","RUN",Ic.run]];
 
   return(<><style>{css}</style>
     <div style={base}>
-      <div style={{padding:"12px 16px 10px",paddingTop:"calc(env(safe-area-inset-top, 0px) + 12px)",borderBottom:"1px solid #e4ded4",background:C.surfaceAlt,flexShrink:0}}>
+      <div style={{padding:"12px 16px 10px",paddingTop:"calc(env(safe-area-inset-top, 0px) + 12px)",background:"transparent",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/icon-192.png" alt="RNF" style={{width:36,height:36,borderRadius:8,flexShrink:0}}/>
+            <img src="/icon-192.png?v=3" alt="RNF" style={{width:40,height:40,borderRadius:12,flexShrink:0,boxShadow:"0 0 0 1px rgba(255,255,255,0.12)"}}/>
             <div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,letterSpacing:1,color:C.text,textTransform:"uppercase"}}>The Reel Neil Fitness</div>
-              <div style={{fontSize:10,color:C.textMute,marginTop:1}}>{userName||session.email}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:19,letterSpacing:-0.3,color:C.text,whiteSpace:"nowrap"}}>The Reel Neil</div>
+              <div style={{fontSize:12,color:C.textMute,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:150}}>{userName||session.email}</div>
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {syncing&&<div style={{fontSize:10,color:C.textMute,fontWeight:600,letterSpacing:0.5}}>SAVING…</div>}
             {saveError&&<div style={{fontSize:10,color:C.red,fontWeight:600,maxWidth:120,textAlign:"right"}}>{saveError}</div>}
             {!syncing&&!saveError&&<div style={{fontSize:10,color:C.green,fontWeight:600,letterSpacing:0.5,opacity:0}}>✓</div>}
-            {activePlan&&<div style={{background:C.orange,color:C.text,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,padding:"3px 8px",borderRadius:3,letterSpacing:1}}>WK {currentWeek}</div>}
+            {activePlan&&<div style={{background:C.field,border:`1px solid ${C.line}`,color:C.text,fontWeight:700,fontSize:13,padding:"7px 12px",borderRadius:999,whiteSpace:"nowrap"}}>Week {currentWeek}</div>}
             <a href="https://www.instagram.com/the_reel_neil" target="_blank" rel="noopener noreferrer"
-  style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:34,height:34,borderRadius:7,background:"linear-gradient(135deg,#405de6,#5851db,#833ab4,#c13584,#e1306c,#fd1d1d,#f56040,#f77737,#fcaf45,#ffdc80)",textDecoration:"none",flexShrink:0}}>
+  style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:36,height:36,borderRadius:18,background:"linear-gradient(135deg,#405de6,#5851db,#833ab4,#c13584,#e1306c,#fd1d1d,#f56040,#f77737,#fcaf45,#ffdc80)",textDecoration:"none",flexShrink:0}}>
   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{width:17,height:17}}>
     <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
     <circle cx="12" cy="12" r="4"/>
     <circle cx="17.5" cy="6.5" r="1" fill="white" stroke="none"/>
   </svg>
 </a>
-<button style={{...btn("ghost"),padding:"6px 9px"}} onClick={onLogout}>{Ic.logout}</button>
+<button aria-label="Log out" style={{...btn("ghost"),padding:0,width:36,height:36,minHeight:36,justifyContent:"center"}} onClick={onLogout}>{Ic.logout}</button>
           </div>
         </div>
       </div>
@@ -479,17 +480,17 @@ function MainApp({session,onLogout}){
         {tab==="cardio"   &&<CardioTab data={cardioData} onSave={saveCardioData}/>}
         {tab==="running"  &&<RunningTab data={runData} onSave={saveRunData} cardioData={cardioData} onSaveCardio={saveCardioData}/>}
       </div>
-      <nav style={{borderTop:`1px solid ${C.lineStrong}`,background:C.surface,flexShrink:0,boxShadow:"0 -2px 10px rgba(44,44,48,0.07)",paddingBottom:6}}>
+      <nav style={{borderTop:`1px solid ${C.lineStrong}`,background:C.surface,flexShrink:0,boxShadow:"0 -8px 30px rgba(0,0,0,0.45)",paddingBottom:6}}>
         <div style={{display:"flex"}}>
           {TABS.slice(0,5).map(([id,label,icon])=>(
-            <button key={id} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 2px",border:"none",outline:"none",background:tab===id?C.orangeBg:"none",color:tab===id?C.orange:C.text,cursor:"pointer",fontSize:9,fontFamily:"'Barlow',sans-serif",fontWeight:tab===id?700:600,letterSpacing:0.3,textTransform:"uppercase"}} onClick={()=>setTab(id)}>
+            <button key={id} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 2px",border:"none",outline:"none",background:tab===id?C.orangeBg:"none",color:tab===id?C.orange:C.text,cursor:"pointer",fontSize:9,fontFamily:"'Inter',system-ui,sans-serif",fontWeight:tab===id?700:600,letterSpacing:0.3,textTransform:"uppercase"}} onClick={()=>setTab(id)}>
               {icon}{label}
             </button>
           ))}
         </div>
         <div style={{display:"flex",borderTop:`1px solid ${C.line}`}}>
           {TABS.slice(5).map(([id,label,icon])=>(
-            <button key={id} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 2px 12px",border:"none",outline:"none",background:tab===id?C.orangeBg:"none",color:tab===id?C.orange:C.text,cursor:"pointer",fontSize:9,fontFamily:"'Barlow',sans-serif",fontWeight:tab===id?700:600,letterSpacing:0.3,textTransform:"uppercase"}} onClick={()=>setTab(id)}>
+            <button key={id} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 2px 12px",border:"none",outline:"none",background:tab===id?C.orangeBg:"none",color:tab===id?C.orange:C.text,cursor:"pointer",fontSize:9,fontFamily:"'Inter',system-ui,sans-serif",fontWeight:tab===id?700:600,letterSpacing:0.3,textTransform:"uppercase"}} onClick={()=>setTab(id)}>
               {icon}{label}
             </button>
           ))}
@@ -576,7 +577,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
   if(editing||!profile)return(
     <div style={{padding:"14px 14px 32px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5}}>CALORIE CALCULATOR</div>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5}}>CALORIE CALCULATOR</div>
         {profile&&<button style={{...btn("ghost"),padding:"6px 10px"}} onClick={()=>setEditing(false)}>Cancel</button>}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -584,7 +585,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
           <div style={{flex:1}}><label style={lbl}>Age</label><input style={inp} type="number" inputMode="numeric" placeholder="e.g. 30" value={form.age} onChange={e=>f("age",e.target.value)}/></div>
           <div style={{flex:1}}><label style={lbl}>Gender</label>
             <div style={{display:"flex",gap:6}}>
-              {["male","female"].map(g=><button key={g} onClick={()=>f("gender",g)} style={{flex:1,padding:"10px",border:"1px solid",borderRadius:7,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,textTransform:"uppercase",background:form.gender===g?C.orange:C.field,color:form.gender===g?C.text:C.textMute,borderColor:form.gender===g?C.orange:C.lineStrong}}>{g}</button>)}
+              {["male","female"].map(g=><button key={g} onClick={()=>f("gender",g)} style={{flex:1,padding:"10px",border:"1px solid",borderRadius:7,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,textTransform:"uppercase",background:form.gender===g?C.orange:C.field,color:form.gender===g?C.text:C.textMute,borderColor:form.gender===g?C.orange:C.lineStrong}}>{g}</button>)}
             </div>
           </div>
         </div>
@@ -629,15 +630,15 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
   return(
     <div style={{padding:"14px 14px 32px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5}}>CALORIE CALCULATOR</div>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5}}>CALORIE CALCULATOR</div>
         <button style={{...btn("ghost"),padding:"6px 10px",fontSize:12}} onClick={()=>setEditing(true)}>{Ic.edit} Edit</button>
       </div>
       <div style={{fontSize:11,color:C.textMute,marginBottom:20}}>{profile.age}yr · {profile.gender} · {profile.height}cm · {profile.weight}kg · {act.label}</div>
 
       {/* Main target */}
-      <div style={{background:"linear-gradient(135deg,#dff0e4,#dff0e4)",border:"1px solid #dff0e4",borderRadius:12,padding:"20px",marginBottom:14,textAlign:"center"}}>
+      <div style={{background:"linear-gradient(135deg,rgba(48,209,88,0.28),rgba(48,209,88,0.28))",border:"1px solid rgba(48,209,88,0.28)",borderRadius:12,padding:"20px",marginBottom:14,textAlign:"center"}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,color:C.orange,textTransform:"uppercase",marginBottom:6}}>Daily Calorie Target</div>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:56,color:C.orange,lineHeight:1}}>{results.target.toLocaleString()}</div>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:56,color:C.orange,lineHeight:1}}>{results.target.toLocaleString()}</div>
         <div style={{fontSize:12,color:C.orange,marginTop:4}}>kcal / day</div>
         <div style={{marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           <span style={{fontSize:18}}>{goal.icon}</span>
@@ -648,15 +649,15 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
 
       {/* Stats row */}
       <div style={{display:"flex",gap:8,marginBottom:14}}>
-        <div style={statBox(C.gold)}><div style={{fontSize:10,color:C.blue,fontWeight:700,letterSpacing:1,marginBottom:4}}>BMR</div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:22,color:C.gold}}>{results.bmr.toLocaleString()}</div><div style={{fontSize:10,color:C.textMute}}>kcal at rest</div></div>
-        <div style={statBox(C.blue)}><div style={{fontSize:10,color:C.blue,fontWeight:700,letterSpacing:1,marginBottom:4}}>TDEE</div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:22,color:C.blue}}>{results.tdee.toLocaleString()}</div><div style={{fontSize:10,color:C.textMute}}>maintenance</div></div>
+        <div style={statBox(C.gold)}><div style={{fontSize:10,color:C.blue,fontWeight:700,letterSpacing:1,marginBottom:4}}>BMR</div><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:22,color:C.gold}}>{results.bmr.toLocaleString()}</div><div style={{fontSize:10,color:C.textMute}}>kcal at rest</div></div>
+        <div style={statBox(C.blue)}><div style={{fontSize:10,color:C.blue,fontWeight:700,letterSpacing:1,marginBottom:4}}>TDEE</div><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:22,color:C.blue}}>{results.tdee.toLocaleString()}</div><div style={{fontSize:10,color:C.textMute}}>maintenance</div></div>
       </div>
 
       {/* Macros */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
         <SectionHead label="Daily Macros"/>
         {macros&&JSON.stringify(macros)!==JSON.stringify(base)&&(
-          <button onClick={resetMacros} style={{fontSize:11,color:C.orange,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5,textTransform:"uppercase",paddingBottom:10}}>↺ Reset</button>
+          <button onClick={resetMacros} style={{fontSize:11,color:C.orange,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:0.5,textTransform:"uppercase",paddingBottom:10}}>↺ Reset</button>
         )}
       </div>
       <div style={{fontSize:11,color:C.textMute,marginBottom:12}}>Slide protein to adjust all macros equally. Slide carbs or fat to swap between them.</div>
@@ -670,7 +671,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
               <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:c,textTransform:"uppercase"}}>{n}</div>
               <div style={{textAlign:"right"}}>
-                <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:26,color:c}}>{v}</span>
+                <span style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:26,color:c}}>{v}</span>
                 <span style={{fontSize:11,color:C.textMute}}> g</span>
                 <span style={{fontSize:11,color:C.textMute,marginLeft:6}}>{v*kcalPg} kcal</span>
               </div>
@@ -685,7 +686,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
       <div style={{...card,padding:"10px 14px",marginBottom:14,background:C.surface}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={{fontSize:11,color:C.textMute}}>Total from macros</span>
-          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:16,
+          <span style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:16,
             color:Math.abs((m.protein*4+m.fat*9+m.carbs*4)-totalCals)<=5?C.green:C.red}}>
             {(m.protein*4+m.fat*9+m.carbs*4).toLocaleString()} / {totalCals.toLocaleString()} kcal
           </span>
@@ -694,7 +695,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
       <div style={{...card,padding:"8px 12px",marginBottom:14,background:C.surface}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={{fontSize:11,color:C.textMute}}>Total calories from macros</span>
-          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:16,color:Math.abs((m.protein*4+m.fat*9+m.carbs*4)-totalCals)<20?C.green:C.red}}>
+          <span style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:16,color:Math.abs((m.protein*4+m.fat*9+m.carbs*4)-totalCals)<20?C.green:C.red}}>
             {(m.protein*4+m.fat*9+m.carbs*4).toLocaleString()} kcal
           </span>
         </div>
@@ -781,7 +782,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       {syncFld&&syncNote(syncFld)}
     </div>);
   const tog=(label,k,color)=>(
-    <button key={k} onClick={()=>setForm(p=>({...p,[k]:!p[k]}))} style={{flex:1,padding:"10px 4px",borderRadius:7,border:"1px solid",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:form[k]?(color||C.orange):C.field,color:form[k]?"white":C.textMute,borderColor:form[k]?(color||C.orange):C.line}}>{label}</button>);
+    <button key={k} onClick={()=>setForm(p=>({...p,[k]:!p[k]}))} style={{flex:1,padding:"10px 4px",borderRadius:7,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:form[k]?(color||C.orange):C.field,color:form[k]?"white":C.textMute,borderColor:form[k]?(color||C.orange):C.line}}>{label}</button>);
 
   const save=()=>{
     const e={kcal:macroKcal,protein:numOrNull(form.protein),carbs:numOrNull(form.carbs),fat:numOrNull(form.fat),cardioKcals:numOrNull(form.cardioKcals),fluids:numOrNull(form.fluids),sleepHrs:numOrNull(form.sleepHrs),hrv:numOrNull(form.hrv),rhr:numOrNull(form.rhr),trained:form.trained,offPlan:form.offPlan,alcohol:form.alcohol,refeed:form.refeed,notes:form.notes||"",
@@ -866,12 +867,12 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:12}}>DAILY CHECK-IN</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:12}}>DAILY CHECK-IN</div>
 
       {/* View switcher — keeps the daily log short and focused */}
       <div style={{display:"flex",gap:6,marginBottom:14}}>
         {[["log","Log"],["trends","Trends"],["history","History"],["settings","Setup"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"9px 4px",borderRadius:7,border:"1px solid",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:view===k?C.text:C.field,color:view===k?C.onDark:C.textMute,borderColor:view===k?C.text:C.line}}>{l}</button>
+          <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"9px 4px",borderRadius:7,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:view===k?C.text:C.field,color:view===k?C.onDark:C.textMute,borderColor:view===k?C.text:C.line}}>{l}</button>
         ))}
       </div>
 
@@ -889,15 +890,15 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       {/* Targets (pulled from Cals tab) */}
       <div style={{...card,padding:14,marginBottom:12,background:refeedOn?C.goldBg:C.surface,borderColor:refeedOn?C.gold+"55":C.line}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1,color:refeedOn?C.gold:C.textMute,textTransform:"uppercase"}}>{refeedOn?"🔥 Refeed Day Targets":"Today's Targets"}</div>
-          <button onClick={()=>setShowRefeedEdit(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",color:C.orange,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:0.5,textTransform:"uppercase"}}>{showRefeedEdit?"Close":"Refeed Setup"}</button>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:1,color:refeedOn?C.gold:C.textMute,textTransform:"uppercase"}}>{refeedOn?"🔥 Refeed Day Targets":"Today's Targets"}</div>
+          <button onClick={()=>setShowRefeedEdit(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",color:C.orange,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:11,letterSpacing:0.5,textTransform:"uppercase"}}>{showRefeedEdit?"Close":"Refeed Setup"}</button>
         </div>
         {targets?(
           <div style={{display:"flex",gap:6,textAlign:"center"}}>
             {[["KCAL",targets.kcal,C.orange],["PRO",targets.protein,C.blue],["CARBS",targets.carbs,C.green],["FAT",targets.fat,C.gold]].map(([l,v,c])=>(
               <div key={l} style={{flex:1,background:C.surfaceAlt,border:`1px solid ${c}33`,borderRadius:8,padding:"8px 4px"}}>
                 <div style={{fontSize:9,color:c,fontWeight:700,letterSpacing:0.5}}>{l}</div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:19,color:c}}>{v!=null?v.toLocaleString():"—"}</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:19,color:c}}>{v!=null?v.toLocaleString():"—"}</div>
               </div>
             ))}
             <div style={{flex:1,background:C.surfaceAlt,border:`1px solid ${C.green}33`,borderRadius:8,padding:"8px 4px"}}>
@@ -905,7 +906,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
               {editStepsTarget?(
                 <input style={{...inp,padding:"2px 4px",fontSize:13,textAlign:"center"}} type="number" inputMode="numeric" autoFocus value={stepsTargetInput} onChange={e=>setStepsTargetInput(e.target.value)} onBlur={()=>{const t=parseInt(stepsTargetInput)||null;onSaveCardioData({...cardioData,stepsTarget:t});setEditStepsTarget(false);}} onKeyDown={e=>e.key==="Enter"&&e.target.blur()}/>
               ):(
-                <div onClick={()=>setEditStepsTarget(true)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:19,color:C.green,cursor:"pointer"}}>{stepsTarget?stepsTarget.toLocaleString():"set"}</div>
+                <div onClick={()=>setEditStepsTarget(true)} style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:19,color:C.green,cursor:"pointer"}}>{stepsTarget?stepsTarget.toLocaleString():"set"}</div>
               )}
             </div>
           </div>
@@ -930,7 +931,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
 
       {/* ── MORNING ── */}
       <div style={{display:"flex",alignItems:"center",gap:8,margin:"4px 0 8px"}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,letterSpacing:1,color:C.gold}}>🌅 MORNING</div>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:15,letterSpacing:1,color:C.gold}}>🌅 MORNING</div>
         <div style={{fontSize:11,color:C.textMute}}>enter when you get weighed</div>
       </div>
       <div style={{...card,padding:14,marginBottom:12,border:`1px solid ${C.gold}44`}}>
@@ -944,7 +945,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
 
       {/* ── EVENING ── */}
       <div style={{display:"flex",alignItems:"center",gap:8,margin:"14px 0 8px"}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,letterSpacing:1,color:C.blue}}>🌙 EVENING</div>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:15,letterSpacing:1,color:C.blue}}>🌙 EVENING</div>
         <div style={{fontSize:11,color:C.textMute}}>complete at the end of the day</div>
       </div>
       {/* Nutrition */}
@@ -956,10 +957,10 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
           {numField("Fat (g)","fat","g")}
         </div>
         {/* Calories auto-calculated from the macros */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.orangeBg,border:"1px solid #fae7d8",borderRadius:8,padding:"10px 14px",marginBottom:targets?10:0}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.orangeBg,border:"1px solid rgba(255,122,46,0.28)",borderRadius:8,padding:"10px 14px",marginBottom:targets?10:0}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.orange,textTransform:"uppercase"}}>Calories (auto)</div>
           <div>
-            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:24,color:C.orange}}>{macroKcal!=null?macroKcal.toLocaleString():"—"}</span>
+            <span style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:24,color:C.orange}}>{macroKcal!=null?macroKcal.toLocaleString():"—"}</span>
             <span style={{fontSize:11,color:C.textMute}}> kcal{targets?.kcal?` / ${targets.kcal.toLocaleString()}`:""}</span>
           </div>
         </div>
@@ -1017,7 +1018,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       {/* Notes + save */}
       <div style={{...card,padding:14,marginBottom:12}}>
         <SectionHead label="Notes"/>
-        <textarea style={{...inp,minHeight:64,resize:"vertical",fontFamily:"'Barlow',sans-serif"}} placeholder="Anything worth noting — energy, hunger, training quality…" value={form.notes} onChange={e=>f("notes",e.target.value)}/>
+        <textarea style={{...inp,minHeight:64,resize:"vertical",fontFamily:"'Inter',system-ui,sans-serif"}} placeholder="Anything worth noting — energy, hunger, training quality…" value={form.notes} onChange={e=>f("notes",e.target.value)}/>
       </div>
       <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"14px",marginBottom:12,background:saved?C.green:C.text}} onClick={save}>{saved?<>{Ic.check} Saved!</>:<>{Ic.check} Save Check-in — {fmtDate(date)}</>}</button>
 
@@ -1025,7 +1026,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       <div style={{...card,padding:14,marginBottom:12,border:isSunday?`1px solid ${C.orange}66`:`1px solid ${C.line}`}}>
         <button onClick={()=>setShowWeekly(s=>!s)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",padding:0}}>
           <div style={{textAlign:"left"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:isSunday?C.orange:C.textMute,textTransform:"uppercase"}}>📏 Weekly Check-in {isSunday?"— it's Sunday!":""}</div>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:isSunday?C.orange:C.textMute,textTransform:"uppercase"}}>📏 Weekly Check-in {isSunday?"— it's Sunday!":""}</div>
             <div style={{fontSize:11,color:C.textMute,marginTop:2}}>{latestM?`Last done ${fmtDate(latestM.date)}`:"Measurements & BP — once a week"}</div>
           </div>
           <span style={{color:C.textMute,fontSize:12}}>{showWeekly?"▲":"▼"}</span>
@@ -1056,19 +1057,19 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
           <SectionHead label="Trends"/>
           <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:6,marginBottom:8}}>
             {METRICS.map(([k,l,,c])=>(
-              <button key={k} onClick={()=>setMetric(k)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",textTransform:"uppercase",background:metric===k?c:"transparent",color:metric===k?"white":C.textMute,borderColor:metric===k?c:C.line}}>{l}</button>
+              <button key={k} onClick={()=>setMetric(k)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",textTransform:"uppercase",background:metric===k?c:"transparent",color:metric===k?"white":C.textMute,borderColor:metric===k?c:C.line}}>{l}</button>
             ))}
           </div>
           {wAvgs.length>1?(
             <div style={{...card,padding:"14px 8px 10px 4px",marginBottom:10}}>
-              <div style={{padding:"0 10px 8px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,color:C.textMute,letterSpacing:1}}>WEEKLY AVERAGE — {(METRICS.find(m=>m[0]===metric)||[])[1]?.toUpperCase()}</div>
+              <div style={{padding:"0 10px 8px",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,color:C.textMute,letterSpacing:1}}>WEEKLY AVERAGE — {(METRICS.find(m=>m[0]===metric)||[])[1]?.toUpperCase()}</div>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={chartData} margin={{top:4,right:16,left:0,bottom:4}}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.line} vertical={false}/>
                   <XAxis dataKey="name" tick={{fill:C.textMute,fontSize:10}} axisLine={false} tickLine={false}/>
                   <YAxis tick={{fill:C.textMute,fontSize:10}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={44} tickFormatter={v=>v>=10000?`${(v/1000).toFixed(0)}k`:v}/>
                   {refLineY&&<ReferenceLine y={refLineY} stroke={C.green} strokeDasharray="4 4" strokeWidth={1.5}/>}
-                  <Tooltip contentStyle={{background:C.field,border:"1px solid #d8d0c4",borderRadius:8,color:C.text,fontSize:12}} formatter={v=>[v.toLocaleString(),"Weekly avg"]}/>
+                  <Tooltip contentStyle={{background:C.field,border:"1px solid rgba(255,255,255,0.18)",borderRadius:8,color:C.text,fontSize:12}} formatter={v=>[v.toLocaleString(),"Weekly avg"]}/>
                   <Line type="monotone" dataKey="avg" stroke={mColor} strokeWidth={2.5} dot={{fill:mColor,strokeWidth:0,r:3}} activeDot={{r:5}} connectNulls/>
                 </LineChart>
               </ResponsiveContainer>
@@ -1093,9 +1094,9 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
               {summary.map(r=>(
                 <div key={r.week} style={{display:"flex",padding:"9px 14px",borderTop:`1px solid ${C.bg}`,fontSize:13,alignItems:"center"}}>
                   <div style={{flex:1.4,fontWeight:600,color:C.text}}>{fmtDate(r.week)}</div>
-                  <div style={{flex:1,textAlign:"right",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:C.orange}}>{r.weight!=null?r.weight:"—"}</div>
-                  <div style={{flex:1,textAlign:"right",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:C.blue}}>{r.kcal!=null?r.kcal.toLocaleString():"—"}</div>
-                  <div style={{flex:1,textAlign:"right",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,color:C.green}}>{r.steps!=null?r.steps.toLocaleString():"—"}</div>
+                  <div style={{flex:1,textAlign:"right",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,color:C.orange}}>{r.weight!=null?r.weight:"—"}</div>
+                  <div style={{flex:1,textAlign:"right",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,color:C.blue}}>{r.kcal!=null?r.kcal.toLocaleString():"—"}</div>
+                  <div style={{flex:1,textAlign:"right",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,color:C.green}}>{r.steps!=null?r.steps.toLocaleString():"—"}</div>
                 </div>
               ))}
             </div>
@@ -1123,7 +1124,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
               const s=(cardioData?.steps||[]).find(x=>x.date===d);
               const flags=[e.trained?"🏋️":null,e.refeed?"🔥":null,e.offPlan?"🍔":null,e.alcohol?"🍺":null].filter(Boolean).join(" ");
               return(
-                <div key={d} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderTop:i===0?"none":"1px solid #efe9e1"}}>
+                <div key={d} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}>
                   <div style={{flex:1,cursor:"pointer"}} onClick={()=>{setDate(d);setView("log");document.getElementById("scroller")?.scrollTo({top:0});}}>
                     <div style={{fontWeight:600,fontSize:13,color:C.text}}>{fmtDate(d)} {flags&&<span style={{fontSize:11}}>{flags}</span>}</div>
                     <div style={{fontSize:11,color:C.textMute,marginTop:1}}>
@@ -1135,14 +1136,14 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
                 </div>
               );
             })}
-            {histDates.length>10&&<div style={{padding:"10px 14px",borderTop:"1px solid #efe9e1",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllHist(!showAllHist)}>{showAllHist?"Show Less":`Show All ${histDates.length}`}</button></div>}
+            {histDates.length>10&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllHist(!showAllHist)}>{showAllHist?"Show Less":`Show All ${histDates.length}`}</button></div>}
           </div>
         </div>
       )}
       {histDates.length===0&&(
         <div style={{textAlign:"center",padding:"24px 0 10px",color:C.textMute}}>
           <div style={{fontSize:34,marginBottom:8}}>📋</div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:700,color:C.lineStrong,marginBottom:4}}>No check-ins yet</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:17,fontWeight:700,color:C.lineStrong,marginBottom:4}}>No check-ins yet</div>
           <div style={{fontSize:13}}>Fill in your first evening check-in above — it all lives in one place now.</div>
         </div>
       )}
@@ -1175,7 +1176,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
                 try{await navigator.clipboard.writeText(`${HEALTH_SYNC_URL}?token=${healthToken}`);setCopied(true);setTimeout(()=>setCopied(false),1800);}catch{}
               }}>{copied?"✓ Copied":"Copy"}</button>
             </div>
-            <button onClick={()=>setShowSyncHelp(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",color:C.orange,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:0.5,textTransform:"uppercase",padding:0}}>{showSyncHelp?"Hide info ▲":"How it works ▼"}</button>
+            <button onClick={()=>setShowSyncHelp(s=>!s)} style={{background:"none",border:"none",cursor:"pointer",color:C.orange,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:11,letterSpacing:0.5,textTransform:"uppercase",padding:0}}>{showSyncHelp?"Hide info ▲":"How it works ▼"}</button>
             {showSyncHelp&&(
               <div style={{fontSize:12,color:C.textMute,lineHeight:1.7,marginTop:8}}>
                 An iPhone Shortcut sends your Apple Health data here each morning (see the setup guide).
@@ -1296,7 +1297,7 @@ function PicsTab({token,userId,pics,onSavePics}){
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:4}}>PROGRESS PICS</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:4}}>PROGRESS PICS</div>
       <div style={{fontSize:12,color:C.textMute,marginBottom:14}}>📸 Once a week — same day, same spot, same lighting gives the best comparisons.</div>
 
       <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFile}/>
@@ -1328,7 +1329,7 @@ function PicsTab({token,userId,pics,onSavePics}){
                           <div style={{fontSize:9,fontWeight:700,letterSpacing:0.5,marginTop:3}}>ADD</div>
                         </div>
                       )}
-                      {busy===key&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:C.orange}}>UPLOADING…</div>}
+                      {busy===key&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:C.orange}}>UPLOADING…</div>}
                     </div>
                     {path&&(
                       <div style={{display:"flex",gap:4,marginTop:6}}>
@@ -1353,7 +1354,7 @@ function PicsTab({token,userId,pics,onSavePics}){
             <button style={{...btn("ghost"),padding:"7px 12px",fontSize:11}} onClick={()=>setEditOpen(true)}>Edit</button>
           </div>
         )}
-        {err&&<div style={{marginTop:10,background:C.redBg,border:"1px solid #f8e0e0",borderRadius:7,padding:"9px 12px",fontSize:12,color:C.red}}>{err}</div>}
+        {err&&<div style={{marginTop:10,background:C.redBg,border:"1px solid rgba(255,69,58,0.28)",borderRadius:7,padding:"9px 12px",fontSize:12,color:C.red}}>{err}</div>}
       </div>
 
       {/* Compare */}
@@ -1376,12 +1377,12 @@ function PicsTab({token,userId,pics,onSavePics}){
           </div>
           <div style={{display:"flex",gap:6,marginBottom:10}}>
             {POSES.map(([key,label])=>(
-              <button key={key} onClick={()=>setCmpPose(key)} style={{flex:1,padding:"7px 4px",borderRadius:6,border:"1px solid",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:cmpPose===key?C.orange:C.field,color:cmpPose===key?"white":C.textMute,borderColor:cmpPose===key?C.orange:C.line}}>{label}</button>
+              <button key={key} onClick={()=>setCmpPose(key)} style={{flex:1,padding:"7px 4px",borderRadius:6,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:cmpPose===key?C.orange:C.field,color:cmpPose===key?"white":C.textMute,borderColor:cmpPose===key?C.orange:C.line}}>{label}</button>
             ))}
           </div>
           <div style={{display:"flex",gap:6,marginBottom:12}}>
             {[["side","Side by Side"],["overlay","Overlay Slider"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setCmpMode(k)} style={{flex:1,padding:"8px 4px",borderRadius:6,border:"1px solid",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:cmpMode===k?C.text:C.field,color:cmpMode===k?C.onDark:C.textMute,borderColor:cmpMode===k?C.text:C.line}}>{l}</button>
+              <button key={k} onClick={()=>setCmpMode(k)} style={{flex:1,padding:"8px 4px",borderRadius:6,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:cmpMode===k?C.text:C.field,color:cmpMode===k?C.onDark:C.textMute,borderColor:cmpMode===k?C.text:C.line}}>{l}</button>
             ))}
           </div>
 
@@ -1447,7 +1448,7 @@ function PicsTab({token,userId,pics,onSavePics}){
       ):(
         <div style={{textAlign:"center",padding:"30px 0",color:C.textMute}}>
           <div style={{fontSize:36,marginBottom:8}}>📸</div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:17,fontWeight:700,color:C.lineStrong,marginBottom:4}}>No photos yet</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:17,fontWeight:700,color:C.lineStrong,marginBottom:4}}>No photos yet</div>
           <div style={{fontSize:13}}>Add your first front, side and back photos above.</div>
         </div>
       )}
@@ -1477,13 +1478,13 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
     const weekData={...(logs[planId]?.[week]||{}),[dayIdx]:{_skipped:true}};
     onSaveLogs({...logs,[planId]:{...(logs[planId]||{}),[week]:weekData}});
   };
-  if(!activePlan)return(<div style={{padding:32,textAlign:"center"}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:800,color:C.textFaint,marginBottom:12}}>NO ACTIVE PLAN</div><div style={{color:C.textMute,marginBottom:24,fontSize:14}}>Create or activate a training plan to get started.</div><button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={onSelectPlan}>{Ic.plus} Create a Plan</button></div>);
+  if(!activePlan)return(<div style={{padding:32,textAlign:"center"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,color:C.textFaint,marginBottom:12}}>NO ACTIVE PLAN</div><div style={{color:C.textMute,marginBottom:24,fontSize:14}}>Create or activate a training plan to get started.</div><button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={onSelectPlan}>{Ic.plus} Create a Plan</button></div>);
   const focus=["Set Load","Beat Load","Increase Volume","Increase Volume","Increase Volume","DELOAD","Beat Week 1","Beat Week 2","Beat Week 3","Beat Week 4","Beat Week 5","DELOAD"][currentWeek-1]||"";
   return(<div style={{padding:"14px 14px 24px"}}>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
       <button style={{...btn("ghost"),padding:"8px 12px"}} disabled={currentWeek<=1} onClick={()=>onWeekChange(currentWeek-1)}>‹</button>
       <div style={{flex:1,textAlign:"center"}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:28,color:C.text}}>WEEK {currentWeek}</div>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:28,color:C.text}}>WEEK {currentWeek}</div>
         {focus&&<div style={{fontSize:11,color:C.orange,fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>{focus}</div>}
       </div>
       <button style={{...btn("ghost"),padding:"8px 12px"}} disabled={currentWeek>=activePlan.weeks} onClick={()=>onWeekChange(currentWeek+1)}>›</button>
@@ -1491,12 +1492,12 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
     {activePlan.days.map((day,i)=>{
       const dayLog=logs?.[activePlan.id]?.[currentWeek]?.[i];
       const vol=dayLog&&!dayLog._skipped?Object.values(dayLog).filter(Array.isArray).reduce((s,sets)=>s+sets.reduce((a,st)=>a+(st.weight*st.reps||0),0),0):0;
-      return(<div key={i} style={{...card,border:dayLog?"1px solid #dff0e4":"1px solid #e4ded4"}}>
+      return(<div key={i} style={{...card,border:dayLog?"1px solid rgba(48,209,88,0.28)":"1px solid rgba(255,255,255,0.10)"}}>
         <div style={{padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"flex-start",gap:8,flex:1}}>
             <div>
-              <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:1,textTransform:"uppercase",fontFamily:"'Barlow Condensed',sans-serif"}}>Day {i+1}</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:20,color:C.text,marginTop:2}}>{day.name}</div>
+              <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:1,textTransform:"uppercase",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif"}}>Day {i+1}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:20,color:C.text,marginTop:2}}>{day.name}</div>
               <div style={{fontSize:12,color:C.textMute,marginTop:2}}>{day.exercises.length} exercises{dayLog&&<span style={{color:C.orange,marginLeft:8}}>· {Math.round(vol).toLocaleString()} kg vol</span>}</div>
               {logs?.[activePlan.id]?.[currentWeek]?.[`${i}_notes`]&&<div style={{fontSize:11,color:C.textMute,marginTop:3,fontStyle:"italic"}}>"{logs[activePlan.id][currentWeek][`${i}_notes`].slice(0,60)}{logs[activePlan.id][currentWeek][`${i}_notes`].length>60?"…":""}"</div>}
             </div>
@@ -1504,20 +1505,20 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
           <div style={{display:"flex",gap:6,flexShrink:0}}>
             {dayLog?._skipped?(
               <>
-                <div style={{padding:"10px 12px",borderRadius:7,background:C.field,border:"1px solid #d8d0c4",fontSize:12,fontWeight:700,color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5}}>SKIPPED</div>
+                <div style={{padding:"10px 12px",borderRadius:7,background:C.field,border:"1px solid rgba(255,255,255,0.18)",fontSize:12,fontWeight:700,color:C.textMute,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:0.5}}>SKIPPED</div>
                 <button style={{...btn("danger"),padding:"10px 10px"}} onClick={()=>resetSession(activePlan.id,currentWeek,i)} title="Reset">{Ic.trash}</button>
               </>
             ):(
               <>
                 <button style={{...btn(dayLog?"ghost":"primary"),padding:"10px 16px"}} onClick={()=>onStartSession(i)}>{dayLog?"View":"Start"}</button>
-                {!dayLog&&<button style={{...btn("ghost"),padding:"10px 12px",fontSize:11,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,letterSpacing:0.5,color:C.textMute}} onClick={()=>skipSession(activePlan.id,currentWeek,i)}>Skip</button>}
+                {!dayLog&&<button style={{...btn("ghost"),padding:"10px 12px",fontSize:11,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,letterSpacing:0.5,color:C.textMute}} onClick={()=>skipSession(activePlan.id,currentWeek,i)}>Skip</button>}
                 {dayLog&&<button style={{...btn("danger"),padding:"10px 10px"}} onClick={()=>resetSession(activePlan.id,currentWeek,i)} title="Reset">{Ic.trash}</button>}
               </>
             )}
           </div>
         </div>
         <div style={{padding:"0 14px 12px",display:"flex",flexWrap:"wrap",gap:5}}>
-          {day.exercises.slice(0,6).map(ex=>{const e=exMap[ex.exerciseId];return e?<span key={ex.exerciseId} style={{fontSize:11,background:C.field,border:"1px solid #e4ded4",borderRadius:4,padding:"3px 7px",color:C.textMute}}>{e.name}</span>:null;})}
+          {day.exercises.slice(0,6).map(ex=>{const e=exMap[ex.exerciseId];return e?<span key={ex.exerciseId} style={{fontSize:11,background:C.field,border:"1px solid rgba(255,255,255,0.10)",borderRadius:4,padding:"3px 7px",color:C.textMute}}>{e.name}</span>:null;})}
           {day.exercises.length>6&&<span style={{fontSize:11,color:C.textMute,padding:"3px 4px"}}>+{day.exercises.length-6} more</span>}
         </div>
       </div>);
@@ -1576,48 +1577,42 @@ function RestTimer(){
   const r=22;const circ=2*Math.PI*r;
   const done=timeLeft===0;
 
+  const RC=113.1;
+  const ringFrac=running||done?pct:0;
   return(
-    <div style={{position:"absolute",bottom:80,right:14,zIndex:100}}>
+    <div style={{position:"relative",flexShrink:0}}>
       {expanded&&(
-        <div style={{background:C.surfaceAlt,border:"1px solid #e4ded4",borderRadius:14,padding:14,marginBottom:8,minWidth:180,boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
-          {/* Presets */}
+        <div style={{position:"absolute",bottom:72,left:0,width:250,background:"rgba(30,30,36,0.95)",backdropFilter:"blur(36px) saturate(180%)",WebkitBackdropFilter:"blur(36px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderRadius:28,padding:14,boxShadow:`${C.glassHi}, 0 16px 44px rgba(0,0,0,0.6)`}}>
           <div style={{display:"flex",gap:6,marginBottom:12}}>
             {PRESETS.map(p=>(
-              <button key={p} onClick={()=>{setDuration(p);stop();}} style={{flex:1,padding:"5px 2px",background:duration===p?C.orange:C.field,border:"1px solid",borderColor:duration===p?C.orange:C.lineStrong,borderRadius:6,color:duration===p?C.text:C.textMute,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif"}}>
+              <button key={p} onClick={()=>{setDuration(p);stop();}} style={{flex:1,height:36,borderRadius:18,border:"none",cursor:"pointer",background:duration===p?C.orange:C.field,color:duration===p?C.ink:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:13}}>
                 {p<60?`${p}s`:p===60?"1m":p===90?"1:30":p===120?"2m":"3m"}
               </button>
             ))}
           </div>
-          {/* Timer display */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12}}>
-            <svg width={60} height={60} style={{transform:"rotate(-90deg)"}}>
-              <circle cx={30} cy={30} r={r} fill="none" stroke={C.field} strokeWidth={4}/>
-              <circle cx={30} cy={30} r={r} fill="none" stroke={done?C.red:running?C.orange:C.textMute} strokeWidth={4}
-                strokeDasharray={circ} strokeDashoffset={circ*(1-pct)} strokeLinecap="round"
-                style={{transition:"stroke-dashoffset 0.9s linear"}}/>
-            </svg>
-            <div style={{position:"absolute",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,color:done?C.red:running?C.orange:C.text}}>
-              {done?"GO!":timeLeft!=null?fmt(timeLeft):fmt(duration)}
-            </div>
+          <div style={{textAlign:"center",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:36,letterSpacing:-1,fontVariantNumeric:"tabular-nums",color:done?C.red:running?C.blue:C.text,marginBottom:12}}>
+            {done?"GO!":timeLeft!=null?fmt(timeLeft):fmt(duration)}
           </div>
-          {/* Controls */}
-          {!running&&timeLeft===null&&<button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"9px"}} onClick={()=>start(duration)}>Start</button>}
-          {running&&<button style={{...btn("ghost"),width:"100%",justifyContent:"center",padding:"9px"}} onClick={stop}>Stop</button>}
+          {!running&&timeLeft===null&&<button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={()=>start(duration)}>Start rest</button>}
+          {running&&<button style={{...btn("ghost"),width:"100%",justifyContent:"center"}} onClick={stop}>Stop</button>}
           {!running&&timeLeft!==null&&(
             <div style={{display:"flex",gap:6}}>
-              <button style={{...btn("primary"),flex:1,justifyContent:"center",padding:"9px"}} onClick={()=>start(duration)}>Restart</button>
-              <button style={{...btn("ghost"),flex:1,justifyContent:"center",padding:"9px"}} onClick={stop}>Clear</button>
+              <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>start(duration)}>Restart</button>
+              <button style={{...btn("ghost"),flex:1,justifyContent:"center"}} onClick={stop}>Clear</button>
             </div>
           )}
         </div>
       )}
-      {/* Floating button */}
-      <button onClick={()=>setExpanded(e=>!e)} style={{width:52,height:52,borderRadius:"50%",background:running?C.orange:done?C.red:C.field,border:`2px solid ${running?C.orange:done?C.red:C.lineStrong}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.5)",flexDirection:"column",gap:1}}>
-        <svg viewBox="0 0 24 24" fill="none" stroke={running?C.text:done?"white":C.textMute} strokeWidth="2" strokeLinecap="round" style={{width:20,height:20}}>
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      <button aria-label={done?"Rest over":running?`Rest timer, ${fmt(timeLeft)} left`:"Rest timer"} onClick={()=>setExpanded(e=>!e)} style={{height:60,padding:"0 16px 0 8px",borderRadius:30,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.78)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 16px 40px rgba(0,0,0,0.55)`,display:"flex",alignItems:"center",gap:10,cursor:"pointer",color:C.text,fontFamily:"'Inter',system-ui,sans-serif"}}>
+        <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="22" cy="22" r="18" fill="none" stroke={C.line} strokeWidth="4"/>
+          {ringFrac>0&&<circle cx="22" cy="22" r="18" fill="none" stroke={done?C.red:C.blue} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(RC*ringFrac).toFixed(1)} ${RC}`} transform="rotate(-90 22 22)" style={{transition:"stroke-dasharray .9s linear"}}/>}
+          {!running&&!done&&<path d="M22 14v8l5 3" fill="none" stroke={C.textMute} strokeWidth="2.2" strokeLinecap="round"/>}
         </svg>
-        {running&&<span style={{fontSize:9,fontWeight:800,color:C.text,fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{fmt(timeLeft)}</span>}
-        {done&&<span style={{fontSize:9,fontWeight:800,color:"white",fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>GO!</span>}
+        <span style={{textAlign:"left"}}>
+          <span style={{display:"block",fontSize:11,fontWeight:700,letterSpacing:0.4,color:done?C.red:C.textMute}}>{done?"GO!":"REST"}</span>
+          <span style={{display:"block",fontSize:18,fontWeight:750,fontVariantNumeric:"tabular-nums"}}>{timeLeft!=null?fmt(timeLeft):fmt(duration)}</span>
+        </span>
       </button>
     </div>
   );
@@ -1723,6 +1718,9 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   const [sets,setSets]=useState(initSets);
   const [newPbIds,setNewPbIds]=useState(new Set());
   const [pendingPbs,setPendingPbs]=useState([]);
+  const [menuFor,setMenuFor]=useState(null);// {pi, activeId}
+  const [completeOpen,setCompleteOpen]=useState(false);
+  const [sessionStats,setSessionStats]=useState(null);
   const [saved,setSaved]=useState(false);
   const [exerciseInfo,setExerciseInfo]=useState(null);
   const [sessionNotes,setSessionNotes]=useState(initNotes);
@@ -1800,9 +1798,10 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   // Moving an exercise reorders this day in the plan itself, so the order sticks for every week after.
   // Safe for history: logs are stored by exercise id, never by position.
   const moveExercise=(i,dir)=>{
-    const j=i+dir;if(!onReorder||j<0||j>=day.exercises.length)return;
+    const j=i+dir;if(!onReorder||j<0||j>=day.exercises.length)return false;
     const exs=[...day.exercises];[exs[i],exs[j]]=[exs[j],exs[i]];
     onReorder(exs);
+    return true;
   };
   const openSwapSession=async(originalId,muscle,name)=>{
     setSwappingEx({originalId,muscle,name});
@@ -1881,6 +1880,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
     const prevDayLog=logs?.[plan.id]?.[week-1]?.[dayIdx];
     const prevVol=prevDayLog?Object.values(prevDayLog).filter(Array.isArray).reduce((t,s)=>t+s.reduce((a,st)=>a+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0),0):0;
     const thisVol=Object.values(sets).filter(Array.isArray).reduce((t,s)=>t+s.reduce((a,st)=>a+(parseFloat(st.weight)||0)*(parseInt(st.reps)||0),0),0);
+    {const all=Object.values(sets).filter(Array.isArray).flat();setSessionStats({vol:thisVol,prevVol,sets:all.filter(x=>x?.weight&&x?.reps).length,extras:all.filter(x=>x?.extra&&x?.weight&&x?.reps).length});}
+    setCompleteOpen(true);
     const newPbList=[...tr].map(id=>{const e=exMap[id];const pb=np[id];return e&&pb?{name:e.name,weight:pb.weight,reps:pb.reps,orm:est1RM(pb.weight,pb.reps)}:null}).filter(Boolean);
     const exSummary=sessionExercises.map(ex=>{const activeId=ex.added?ex.exerciseId:(swappedExercises[ex.exerciseId]||ex.exerciseId);const e=exMap[activeId];const exSets=sets[activeId]||[];const logged=exSets.filter(s=>s.weight&&s.reps);return logged.length?`${e?.name}: ${logged.map(s=>`${s.weight}kg×${s.reps}${s.extra?" (extra set)":""}`).join(', ')}`:null;}).filter(Boolean).join(' | ');
     try{
@@ -1894,22 +1895,43 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
     }catch{}
     setSummaryLoading(false);
   };
-  const keepPb=p=>{onSavePbs({...pbs,[p.id]:{weight:p.weight,reps:p.reps,date:p.date}});setPendingPbs(l=>l.filter(x=>x.id!==p.id));};
+  const keepPb=p=>{onSavePbs({...pbs,[p.id]:{weight:p.weight,reps:p.reps,date:p.date}});setPendingPbs(l=>l.filter(x=>x.id!==p.id));setNewPbIds(n=>new Set(n).add(p.id));};
   const discardPb=id=>setPendingPbs(l=>l.filter(x=>x.id!==id));
+  const glassCard={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:30,boxShadow:`${C.glassHi}, 0 20px 50px rgba(0,0,0,0.45)`,backdropFilter:"blur(28px) saturate(180%)",WebkitBackdropFilter:"blur(28px) saturate(180%)"};
+  const pill={border:`1px solid ${C.line}`,background:C.field,color:C.text,borderRadius:999,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:650,fontSize:14};
+  const iconBtn={width:42,height:42,borderRadius:21,border:"none",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.text,padding:0};
+  const svgI=(d,col)=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
+  const volOf=a=>(a||[]).reduce((t,x)=>t+(parseFloat(x?.weight)||0)*(parseInt(x?.reps)||0),0);
+  const exState=sessionExercises.map(ex=>{const id=ex.added?ex.exerciseId:(swappedExercises[ex.exerciseId]||ex.exerciseId);const planned=ex.setConfigs.reduce((m,c)=>m+(parseInt(c.sets)||0),0)||3;const logged=(sets[id]||[]).filter(x=>x.weight&&x.reps).length;return {done:logged>=planned};});
+  const doneCount=exState.filter(x=>x.done).length;
+  const currentIdx=exState.findIndex(x=>!x.done);
+  const menuEx=menuFor?sessionExercises[menuFor.pi]:null;
+  const closeComplete=()=>{setCompleteOpen(false);setSummary(null);setPendingPbs([]);onBack();};
   return(<div style={{...base}}>
-    <div style={{padding:"12px 14px",paddingTop:"calc(env(safe-area-inset-top, 0px) + 12px)",borderBottom:"1px solid #e4ded4",background:C.surfaceAlt,flexShrink:0}}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={onBack}>{Ic.back}</button>
-        <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,color:C.text}}>{day.name}</div>
-          <div style={{fontSize:11,color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif"}}>{plan.name} · WEEK {week}</div></div>
+    <div style={{padding:"10px 16px 4px",paddingTop:"calc(env(safe-area-inset-top, 0px) + 10px)",flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <button aria-label="Back" onClick={onBack} style={{width:44,height:44,borderRadius:22,border:`1px solid ${C.glassBorder}`,background:C.field,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.text,boxShadow:C.glassHi,padding:0}}>{Ic.back}</button>
+        <div style={{display:"flex",gap:2,padding:3,borderRadius:25,border:`1px solid ${C.glassBorder}`,background:C.field,boxShadow:C.glassHi}}>
+          <button aria-label="Notes" onClick={()=>document.getElementById("session-notes")?.scrollIntoView({behavior:"smooth",block:"center"})} style={iconBtn}>{svgI(<path d="M4 20h4L19 9l-4-4L4 16v4z"/>,C.text)}</button>
+          <button aria-label="Add exercise" onClick={()=>setAddingEx(true)} style={iconBtn}>{svgI(<path d="M12 5v14M5 12h14"/>,C.text)}</button>
+        </div>
+      </div>
+      <div style={{padding:"10px 4px 0"}}>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:30,fontWeight:800,letterSpacing:-0.9,lineHeight:1.08,color:C.text}}>{day.name}</div>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6}}>
+          <div style={{fontSize:13,fontWeight:500,color:C.textMute,whiteSpace:"nowrap"}}>{plan.name} · Week {week}</div>
+          <div role="img" aria-label={`${doneCount} of ${exState.length} exercises done`} style={{flex:1,display:"grid",gridTemplateColumns:`repeat(${Math.max(exState.length,1)}, minmax(0, 1fr))`,gap:4}}>
+            {exState.map((x,i)=><div key={i} style={{height:5,borderRadius:3,background:x.done?C.green:i===currentIdx?C.orange:C.line}}/>)}
+          </div>
+        </div>
       </div>
     </div>
-    <RestTimer/>
-    <div style={{flex:1,overflowY:"auto",overflowX:"hidden"}}>
-      {prevNextNote&&<div style={{margin:"10px 12px 0",padding:"10px 12px",background:C.goldBg,border:`1px solid ${C.gold}`,borderRadius:8,display:"flex",gap:8,alignItems:"flex-start"}}>
-        <span style={{fontSize:14,lineHeight:1.2}}>📝</span>
-        <div><div style={{fontSize:10,fontWeight:700,letterSpacing:0.5,color:C.gold,textTransform:"uppercase",marginBottom:2}}>Note from Week {week-1}</div>
-          <div style={{fontSize:13,color:C.text,lineHeight:1.4,whiteSpace:"pre-wrap"}}>{prevNextNote}</div></div>
+    <div style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:112}}>
+      {savedDraft&&<div style={{margin:"10px 12px 0",padding:"9px 14px",background:C.greenBg,border:"1px solid rgba(48,209,88,0.28)",borderRadius:16,fontSize:13,fontWeight:600,color:C.green}}>✓ Session restored. Your progress was saved automatically.</div>}
+      {!savedDraft&&Object.values(initSets).some(st=>st.some(x=>x.carriedOver))&&<div style={{margin:"10px 12px 0",padding:"9px 14px",background:C.goldBg,border:"1px solid rgba(255,214,10,0.22)",borderRadius:16,fontSize:13,fontWeight:600,color:C.gold}}>★ Gold weights are carried over from last week. Tap to change.</div>}
+      {prevNextNote&&<div style={{margin:"10px 12px 0",padding:"12px 14px",background:C.goldBg,border:"1px solid rgba(255,214,10,0.22)",borderRadius:20}}>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.gold,textTransform:"uppercase",marginBottom:3}}>Note from week {week-1}</div>
+        <div style={{fontSize:14,color:C.text,lineHeight:1.45,whiteSpace:"pre-wrap"}}>{prevNextNote}</div>
       </div>}
       {sessionExercises.map((ex,pi)=>{
         const activeId=ex.added?ex.exerciseId:(swappedExercises[ex.exerciseId]||ex.exerciseId);
@@ -1917,206 +1939,225 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
         const isSwapped=activeId!==ex.exerciseId;
         const pb=pbs[activeId],prevSets=prevByExercise[activeId]||getPrevForExercise(activeId),isNewPb=newPbIds.has(activeId),exSets=sets[activeId]||[];
         let labels=[];ex.setConfigs.forEach(cfg=>{for(let i=0;i<cfg.sets;i++)labels.push({reps:cfg.repsRange,note:cfg.note});});
-        return(<div key={ex.exerciseId} style={{...card,margin:"10px 12px",border:isSwapped?"1px solid #fae7d8":"1px solid #e4ded4"}}>
-          <div style={{padding:"12px 14px 8px"}}>
-            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
-              <div style={{flex:1}}>
-                {isSwapped&&<div style={{fontSize:9,color:C.orange,fontWeight:700,letterSpacing:0.5,marginBottom:2}}>⇄ SWAPPED THIS SESSION</div>}
-                {ex.added&&<div style={{fontSize:9,color:C.blue,fontWeight:700,letterSpacing:0.5,marginBottom:2}}>+ ADDED THIS SESSION</div>}
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:18,color:C.text,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}} onClick={()=>setExerciseInfo({name:e.name,muscle:e.muscle})}>
-                  {e.name}
-                  <span style={{fontSize:10,background:C.orangeBg,border:"1px solid #fae7d8",borderRadius:4,padding:"2px 6px",color:C.orange,fontFamily:"'Barlow',sans-serif",fontWeight:600,letterSpacing:0.3}}>HOW TO</span>
-                </div>
+        const blockPrev=getBlockPrev(activeId);
+        const prevVol=Math.round(volOf(blockPrev)),curVol=Math.round(volOf(exSets));
+        const xtra=a=>(a||[]).filter(x=>x?.extra&&parseFloat(x.weight)&&parseInt(x.reps)).length;
+        const prevX=xtra(blockPrev),curX=xtra(exSets);
+        const beaten=prevVol>0&&curVol>prevVol,level=prevVol>0&&curVol===prevVol,gap=prevVol-curVol;
+        const col=beaten?C.green:level?C.gold:C.orange;
+        const loggedN=exSets.filter(x=>x.weight&&x.reps).length,plannedN=labels.length||exSets.length||1;
+        const ringPct=prevVol>0?Math.min(1,curVol/prevVol):Math.min(1,loggedN/plannedN);
+        const ringTxt=prevVol>0?`${Math.round(curVol/prevVol*100)}%`:`${loggedN}/${plannedN}`;
+        const firstOpen=exSets.findIndex(x=>!(x.weight&&x.reps));
+        const RR=28,CIRC=2*Math.PI*RR;
+        return(<div key={ex.exerciseId} style={{...glassCard,margin:"12px 12px 0",padding:16,border:isSwapped?"1px solid rgba(255,122,46,0.35)":ex.added?"1px solid rgba(100,210,255,0.35)":`1px solid ${C.glassBorder}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{position:"relative",width:64,height:64,flexShrink:0}}>
+              <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label={prevVol>0?`Volume ${ringTxt} of last time`:`${loggedN} of ${plannedN} sets logged`}>
+                <circle cx="32" cy="32" r={RR} fill="none" stroke={C.line} strokeWidth="6"/>
+                {ringPct>0&&<circle cx="32" cy="32" r={RR} fill="none" stroke={prevVol>0?col:C.green} strokeWidth="6" strokeLinecap="round" strokeDasharray={`${(CIRC*ringPct).toFixed(1)} ${CIRC.toFixed(1)}`} transform="rotate(-90 32 32)" style={{transition:"stroke-dasharray .3s ease"}}/>}
+              </svg>
+              <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,letterSpacing:-0.3,color:C.text}}>{ringTxt}</div>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              {(isSwapped||ex.added)&&<div style={{fontSize:11,fontWeight:700,letterSpacing:0.4,color:isSwapped?C.orange:C.blue,marginBottom:2}}>{isSwapped?"⇄ SWAPPED THIS SESSION":"+ ADDED THIS SESSION"}</div>}
+              <button onClick={()=>setExerciseInfo({name:e.name,muscle:e.muscle})} style={{background:"none",border:"none",padding:0,cursor:"pointer",textAlign:"left",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:20,fontWeight:750,letterSpacing:-0.5,lineHeight:1.15,color:C.text}}>{e.name}</button>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:5,flexWrap:"wrap"}}>
                 <MuscleChip muscle={e.muscle}/>
-              </div>
-              {!ex.added&&day.exercises.length>1&&<div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0,marginTop:2}}>
-                <button aria-label="Move up" disabled={pi===0} onClick={()=>moveExercise(pi,-1)} style={{width:26,height:20,padding:0,border:"1px solid #e4ded4",borderRadius:5,background:C.field,cursor:"pointer",color:C.textMute,fontSize:10,lineHeight:1,opacity:pi===0?0.35:1}}>▲</button>
-                <button aria-label="Move down" disabled={pi===day.exercises.length-1} onClick={()=>moveExercise(pi,1)} style={{width:26,height:20,padding:0,border:"1px solid #e4ded4",borderRadius:5,background:C.field,cursor:"pointer",color:C.textMute,fontSize:10,lineHeight:1,opacity:pi===day.exercises.length-1?0.35:1}}>▼</button>
-              </div>}
-              {ex.added?<button onClick={()=>removeAdded(ex.exerciseId)}
-                style={{background:C.redBg,border:"1px solid #f8e0e0",borderRadius:6,padding:"5px 9px",cursor:"pointer",color:C.red,fontSize:11,fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5,flexShrink:0,marginTop:2}}>
-                REMOVE
-              </button>:<button onClick={()=>openSwapSession(ex.exerciseId,exMap[ex.exerciseId]?.muscle||e.muscle,exMap[ex.exerciseId]?.name||e.name)}
-                style={{background:C.orangeBg,border:"1px solid #fae7d8",borderRadius:6,padding:"5px 9px",cursor:"pointer",color:C.orange,fontSize:11,fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5,flexShrink:0,marginTop:2}}>
-                {"⇄"} SWAP
-              </button>}
-              <div style={{flexShrink:0}}>
-                {isNewPb?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.orange,borderRadius:4,padding:"3px 8px",fontSize:11,color:C.text,fontWeight:700,animation:"pop .3s ease"}}>{Ic.fire} NEW PB!</span>
-                :pb?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.orangeBg,border:"1px solid #dff0e4",borderRadius:4,padding:"3px 8px",fontSize:11,color:C.orange,fontWeight:600}}>{Ic.trophy} {pb.weight}kg × {pb.reps}</span>
-                :<span style={{fontSize:11,color:C.textMute}}>No PB yet</span>}
+                {isNewPb?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.orange,color:C.ink,borderRadius:10,padding:"3px 9px",fontSize:11,fontWeight:800,animation:"pop .3s ease"}}>{Ic.fire} NEW PB</span>
+                 :pb?<span style={{fontSize:12,color:C.textMute,fontWeight:600}}>PB {pb.weight} × {pb.reps}</span>
+                 :<span style={{fontSize:12,color:C.textFaint}}>No PB yet</span>}
               </div>
             </div>
+            <button aria-label="Exercise options" onClick={()=>setMenuFor({pi,activeId})} style={{width:44,height:44,borderRadius:22,border:`1px solid ${C.line}`,background:C.field,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0,flexShrink:0}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill={C.text} aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+            </button>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"32px 1fr 1fr 56px",gap:6,padding:"4px 12px",background:C.surface}}>
-            {["SET","KG","REPS",prevSets.fromOtherBlock?"LAST BLOCK":"PREV"].map(h=><div key={h} style={{fontSize:h==="LAST BLOCK"?8:10,color:h==="LAST BLOCK"?C.textFaint:C.textMute,fontWeight:700,textAlign:"center",lineHeight:1.2}}>{h}</div>)}
+          {(prevVol>0||curVol>0)&&<div style={{marginTop:12,fontSize:13,fontWeight:600,display:"flex",flexWrap:"wrap",gap:"2px 6px",alignItems:"baseline"}}>
+            <span style={{color:C.textMute,fontSize:11,fontWeight:700,letterSpacing:0.5}}>VOLUME</span>
+            <span style={{color:C.text}}>{curVol.toLocaleString("en-GB")}kg</span>
+            {prevVol>0&&<span style={{color:C.textMute}}>/ last {prevVol.toLocaleString("en-GB")}kg</span>}
+            {prevVol>0&&<span style={{marginLeft:"auto",color:col}}>{beaten?`Beaten by ${(curVol-prevVol).toLocaleString("en-GB")}kg`:level?"Level with last time":`${gap.toLocaleString("en-GB")}kg to beat`}</span>}
+          </div>}
+          {(prevX>0||curX>0)&&<div style={{fontSize:12,color:C.gold,fontWeight:600,marginTop:4}}>
+            {prevX>0?`Last time used ${prevX} extra set${prevX>1?"s":""} to hit that`:""}{prevX>0&&curX>0?" · ":""}{curX>0?`${curX} extra set${curX>1?"s":""} today`:""}
+          </div>}
+          <div style={{display:"grid",gridTemplateColumns:"36px minmax(0,1fr) minmax(0,1fr) 62px",gap:6,marginTop:14,padding:"0 6px",fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.textMute}}>
+            <div style={{textAlign:"center"}}>SET</div><div style={{textAlign:"center"}}>KG</div><div style={{textAlign:"center"}}>REPS</div>
+            <div style={{textAlign:"right",paddingRight:8,color:prevSets.fromOtherBlock?C.textFaint:C.textMute,fontSize:prevSets.fromOtherBlock?9:11,whiteSpace:"nowrap"}}>{prevSets.fromOtherBlock?"LAST BLOCK":"PREV"}</div>
           </div>
-          {exSets.map((s,si)=>{const lbl=labels[si],p=prevSets[si];return(
-            <div key={si} style={{display:"grid",gridTemplateColumns:"32px 1fr 1fr 56px",gap:6,alignItems:"center",padding:"7px 12px",borderTop:"1px solid #efe9e1",background:s.weight&&s.reps?C.orangeBg:"transparent"}}>
-              <div style={{textAlign:"center"}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color:s.extra?C.gold:C.textMute}}>{si+1}</div>{s.extra?<div onClick={()=>removeExtraSet(activeId,si)} title="Remove this extra set" style={{fontSize:9,color:C.gold,fontWeight:700,cursor:"pointer",lineHeight:1.2}}>EXTRA ×</div>:lbl?.reps&&<div style={{fontSize:9,color:C.textMute,fontWeight:600}}>{lbl.reps}</div>}</div>
-              <input type="number" inputMode="decimal" min="0" step="0.5" placeholder="kg" value={s.weight}
-                onFocus={e=>e.target.select()}
-                onChange={e=>updateSet(activeId,si,"weight",e.target.value)}
-                style={{...setInp,borderColor:s.weight?C.orangeBg:C.lineStrong,color:s.carriedOver&&!s._edited?C.gold:C.text}}/>
-              <input type="number" inputMode="numeric" min="0" placeholder="reps" value={s.reps}
-                onFocus={e=>e.target.select()}
-                onChange={e=>updateSet(activeId,si,"reps",e.target.value)}
-                style={{...setInp,borderColor:s.reps?C.orangeBg:C.lineStrong}}/>
-              <div style={{textAlign:"center",fontSize:12,color:prevSets.fromOtherBlock?C.textFaint:C.textMute}}>{p?.weight?<><span style={{color:prevSets.fromOtherBlock?C.textFaint:C.text,fontWeight:prevSets.fromOtherBlock?500:600}}>{p.weight}</span><br/><span style={{fontSize:11}}>{p.reps}r</span></>:"—"}</div>
-            </div>);})}
-          <div style={{padding:"6px 12px 8px",borderTop:"1px solid #efe9e1"}}>
-            <button onClick={()=>addExtraSet(activeId)} style={{width:"100%",padding:"7px",border:"1px dashed #d8d0c4",borderRadius:7,background:"transparent",cursor:"pointer",color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5}}>+ ADD SET</button>
-          </div>
-          {(()=>{const vol=a=>(a||[]).reduce((t,x)=>t+(parseFloat(x?.weight)||0)*(parseInt(x?.reps)||0),0);
-            const blockPrev=getBlockPrev(activeId);
-            const prevVol=Math.round(vol(blockPrev)),curVol=Math.round(vol(exSets));
-            const xtra=a=>(a||[]).filter(x=>x?.extra&&parseFloat(x.weight)&&parseInt(x.reps)).length;
-            const prevX=xtra(blockPrev),curX=xtra(exSets);
-            if(!prevVol&&!curVol)return null;
-            const beaten=prevVol>0&&curVol>prevVol,level=prevVol>0&&curVol===prevVol,gap=prevVol-curVol;
-            const pct=prevVol>0?Math.min(100,Math.round(curVol/prevVol*100)):100;
-            const col=beaten?C.green:level?C.gold:C.orange;
-            return(<div style={{padding:"9px 14px 11px",borderTop:"1px solid #efe9e1",background:C.surfaceAlt}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:prevVol>0?6:0}}>
-                <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:0.5}}>VOLUME</div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:700,color:C.text}}>
-                  <span style={{color:col}}>{curVol.toLocaleString("en-GB")}kg</span>
-                  {prevVol>0&&<span style={{color:C.textMute,fontWeight:500}}> / last {prevVol.toLocaleString("en-GB")}kg</span>}
-                </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:6}}>
+          {exSets.map((s,si)=>{const lbl=labels[si],p=prevSets[si],isDone=!!(s.weight&&s.reps),isCur=si===firstOpen;return(
+            <div key={si} style={{display:"grid",gridTemplateColumns:"36px minmax(0,1fr) minmax(0,1fr) 62px",gap:6,alignItems:"center",minHeight:54,padding:"5px 6px",borderRadius:27,
+              background:isDone?"rgba(48,209,88,0.08)":isCur?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.03)",
+              border:isDone?"1px solid rgba(48,209,88,0.22)":isCur?`1.5px solid ${C.orange}`:`1px solid ${C.line}`,
+              boxShadow:isCur?"0 0 0 4px rgba(255,122,46,0.10)":"none"}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                {isDone?<div style={{width:28,height:28,borderRadius:14,background:C.green,color:C.onDark,display:"flex",alignItems:"center",justifyContent:"center"}}>{Ic.check}</div>
+                 :<div style={{width:28,height:28,borderRadius:14,border:`1.5px solid ${s.extra?C.gold:C.lineStrong}`,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:s.extra?C.gold:C.text}}>{si+1}</div>}
+                {s.extra?<button onClick={()=>removeExtraSet(activeId,si)} aria-label={`Remove extra set ${si+1}`} style={{background:"none",border:"none",padding:0,fontSize:9,color:C.gold,fontWeight:700,cursor:"pointer",lineHeight:1.1}}>EXTRA ×</button>
+                 :lbl?.reps&&<div style={{fontSize:9,color:C.textMute,fontWeight:600,lineHeight:1.1}}>{lbl.reps}</div>}
               </div>
-              {(prevX>0||curX>0)&&<div style={{fontSize:11,color:C.gold,fontWeight:600,marginBottom:6}}>
-                {prevX>0?`Last time used ${prevX} extra set${prevX>1?"s":""} to hit that`:""}{prevX>0&&curX>0?" · ":""}{curX>0?`${curX} extra set${curX>1?"s":""} today`:""}
-              </div>}
-              {prevVol>0&&<>
-                <div style={{height:6,borderRadius:3,background:C.field,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:col,borderRadius:3,transition:"width .25s ease"}}/></div>
-                <div style={{fontSize:11,color:col,fontWeight:600,marginTop:5,textAlign:"right"}}>
-                  {beaten?`Beaten by ${(curVol-prevVol).toLocaleString("en-GB")}kg`:level?"Level with last time":`${gap.toLocaleString("en-GB")}kg to beat last time`}
-                </div>
-              </>}
-            </div>);})()}
+              <input type="number" inputMode="decimal" min="0" step="0.5" placeholder="kg" value={s.weight} aria-label={`Set ${si+1} weight in kg`}
+                onFocus={ev=>ev.target.select()}
+                onChange={ev=>updateSet(activeId,si,"weight",ev.target.value)}
+                style={{...setInp,background:isDone?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.09)",color:s.carriedOver&&!s._edited?C.gold:C.text}}/>
+              <input type="number" inputMode="numeric" min="0" placeholder="reps" value={s.reps} aria-label={`Set ${si+1} reps`}
+                onFocus={ev=>ev.target.select()}
+                onChange={ev=>updateSet(activeId,si,"reps",ev.target.value)}
+                style={{...setInp,background:isDone?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.09)",border:isCur&&s.weight&&!s.reps?`1.5px solid ${C.orange}99`:"1px solid transparent"}}/>
+              <div style={{textAlign:"right",paddingRight:8,fontSize:13,color:prevSets.fromOtherBlock?C.textFaint:C.textMute,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{p?.weight?`${p.weight}×${p.reps||"–"}`:"–"}</div>
+            </div>);})}
+          </div>
+          <button onClick={()=>addExtraSet(activeId)} style={{...pill,width:"100%",height:46,marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:C.textMute,background:"rgba(255,255,255,0.04)"}}>{Ic.plus}Add set</button>
         </div>);
       })}
-      <div style={{padding:"4px 12px 10px"}}>
-        {suggestions.length>0&&<div style={{background:C.blueBg,border:"1px solid #c7dbf3",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:0.5,color:C.blue,textTransform:"uppercase",marginBottom:2}}>Last time you added</div>
-          {suggestions.map(id=><div key={id} style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
-            <div style={{flex:1,fontWeight:600,fontSize:14,color:C.text}}>{exMap[id].name}</div>
-            <button onClick={()=>addExercise(id)} style={{padding:"6px 10px",border:"none",borderRadius:6,cursor:"pointer",background:C.blue,color:"white",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.3}}>ADD AGAIN</button>
-            <button onClick={()=>setDismissedSugg(d=>[...d,id])} style={{padding:"6px 10px",border:"1px solid #d8d0c4",borderRadius:6,cursor:"pointer",background:C.surface,color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.3}}>NOT TODAY</button>
+      <div style={{padding:"14px 12px 0"}}>
+        {suggestions.length>0&&<div style={{borderRadius:24,padding:"12px 14px",marginBottom:10,background:C.blueBg,border:"1px solid rgba(100,210,255,0.25)",boxShadow:C.glassHi}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.blue,textTransform:"uppercase"}}>Last time you added</div>
+          {suggestions.map(id=><div key={id} style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+            <div style={{flex:1,minWidth:0,fontWeight:650,fontSize:15,color:C.text}}>{exMap[id].name}</div>
+            <button onClick={()=>addExercise(id)} style={{...pill,height:38,padding:"0 14px",background:C.blue,color:C.onDark,border:"none",fontSize:13,fontWeight:700}}>Add again</button>
+            <button onClick={()=>setDismissedSugg(d=>[...d,id])} style={{...pill,height:38,padding:"0 14px",fontSize:13}}>Not today</button>
           </div>)}
         </div>}
-        <button onClick={()=>setAddingEx(true)} style={{width:"100%",padding:"10px",border:"1px dashed #2f7fd6",borderRadius:8,background:"transparent",cursor:"pointer",color:C.blue,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5}}>+ ADD EXERCISE</button>
+        <button onClick={()=>setAddingEx(true)} style={{...pill,width:"100%",height:50,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:C.blue,border:"1px dashed rgba(100,210,255,0.45)",background:"rgba(100,210,255,0.06)"}}>{Ic.plus}Add exercise</button>
       </div>
-      <div style={{padding:"8px 12px 4px"}}>
-        <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.gold,textTransform:"uppercase",marginBottom:6}}>📝 Notes for Next Session</div>
-        <textarea
+      <div id="session-notes" style={{...glassCard,borderRadius:24,margin:"14px 12px 0",padding:14}}>
+        <label htmlFor="next-note" style={{display:"block",fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.gold,textTransform:"uppercase",marginBottom:8}}>Note for next week</label>
+        <textarea id="next-note"
           value={nextNote}
-          onChange={e=>{setNextNote(e.target.value);saveDraft(sets,sessionNotes,swappedExercises,e.target.value);}}
-          placeholder="A reminder to your future self for next week, e.g. don't increase weights, focus on form..."
-          style={{background:C.field,border:`1px solid ${C.gold}`,borderRadius:8,padding:"10px 12px",color:C.text,width:"100%",fontSize:13,minHeight:70,resize:"none",fontFamily:"'Barlow',sans-serif",lineHeight:1.5,boxSizing:"border-box"}}
+          onChange={ev=>{setNextNote(ev.target.value);saveDraft(sets,sessionNotes,swappedExercises,ev.target.value);}}
+          placeholder="A reminder for next time, e.g. keep the weights, focus on form"
+          style={{...inp,minHeight:64,resize:"none",lineHeight:1.45,border:"1px solid rgba(255,214,10,0.3)",fontFamily:"'Inter',system-ui,sans-serif"}}
         />
-      </div>
-      <div style={{padding:"8px 12px 8px"}}>
-        <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.textMute,textTransform:"uppercase",marginBottom:6}}>Session Notes</div>
-        <textarea
+        <label htmlFor="session-note" style={{display:"block",fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.textMute,textTransform:"uppercase",margin:"14px 0 8px"}}>Session notes</label>
+        <textarea id="session-note"
           value={sessionNotes}
-          onChange={e=>{setSessionNotes(e.target.value);saveDraft(sets,e.target.value);}}
-          placeholder="How did the session feel? Any niggles, PRs, general notes..."
-          style={{background:C.field,border:"1px solid #d8d0c4",borderRadius:8,padding:"10px 12px",color:C.text,width:"100%",fontSize:13,minHeight:80,resize:"none",fontFamily:"'Barlow',sans-serif",lineHeight:1.5,boxSizing:"border-box"}}
+          onChange={ev=>{setSessionNotes(ev.target.value);saveDraft(sets,ev.target.value);}}
+          placeholder="How did it feel? Any niggles?"
+          style={{...inp,minHeight:64,resize:"none",lineHeight:1.45,fontFamily:"'Inter',system-ui,sans-serif"}}
         />
       </div>
-      <div style={{padding:"8px 12px 32px"}}><button style={{...btn(saved?"ghost":"primary"),width:"100%",justifyContent:"center",padding:"14px"}} onClick={handleSave}>{saved?<>{Ic.check} Saved — tap to update</>:"Save Session"}</button></div>
     </div>
-    {savedDraft&&<div style={{margin:"0 12px 8px",padding:"8px 12px",background:C.greenBg,border:"1px solid #dff0e4",borderRadius:7,fontSize:12,color:C.green,display:"flex",alignItems:"center",gap:6}}>
-      {"✓"} Session restored — your progress was saved automatically
-    </div>}
-    {!savedDraft&&Object.values(initSets).some(sets=>sets.some(s=>s.carriedOver))&&(
-      <div style={{margin:"0 12px 8px",padding:"6px 12px",background:C.orangeBg,border:"1px solid #f6ecd2",borderRadius:7,fontSize:11,color:C.gold,display:"flex",alignItems:"center",gap:6}}>
-        <span>★</span> Amber weights carried over from last week — tap to edit
-      </div>
-    )}
+    <div style={{position:"absolute",left:12,right:12,bottom:"calc(env(safe-area-inset-bottom, 0px) + 12px)",display:"flex",gap:10,alignItems:"center",zIndex:50}}>
+      <RestTimer/>
+      <button onClick={handleSave} style={{flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?"rgba(40,40,48,0.78)":C.orange,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>
+    </div>
     {exerciseInfo&&<ExerciseInfoPanel name={exerciseInfo.name} muscle={exerciseInfo.muscle} onClose={()=>setExerciseInfo(null)}/>}
+    {menuFor&&menuEx&&(()=>{
+      const mid=menuFor.activeId,me=exMap[mid]||{},isAdded=!!menuEx.added,mpi=menuFor.pi,planN=day.exercises.length;
+      const close=()=>setMenuFor(null);
+      const row=(icon,tint,label,onClick,o={})=>(<button key={label} onClick={onClick} disabled={o.disabled} style={{width:"100%",minHeight:56,display:"flex",alignItems:"center",gap:14,padding:"0 16px",border:"none",borderTop:o.first?"none":`1px solid ${C.line}`,background:"transparent",color:o.danger?C.red:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:16,fontWeight:600,cursor:o.disabled?"default":"pointer",textAlign:"left",opacity:o.disabled?0.35:1}}>
+        <span style={{width:34,height:34,borderRadius:11,background:tint,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</span><span style={{flex:1}}>{label}</span></button>);
+      const move=dir=>{if(moveExercise(mpi,dir))setMenuFor(m=>({...m,pi:mpi+dir}));};
+      return(<div style={{position:"fixed",inset:0,zIndex:250,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}} onClick={close}/>
+        <div role="dialog" aria-label={`${me.name} options`} style={{position:"relative",margin:"0 8px",marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 8px)",borderRadius:34,background:"rgba(30,30,36,0.94)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,boxShadow:`${C.glassHi}, 0 -10px 60px rgba(0,0,0,0.6)`,padding:"10px 14px 16px"}}>
+          <div style={{width:38,height:5,borderRadius:3,background:C.lineStrong,margin:"0 auto"}}/>
+          <div style={{padding:"14px 6px 12px"}}>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:20,fontWeight:750,letterSpacing:-0.5,color:C.text}}>{me.name}</div>
+            <div style={{fontSize:13,color:C.textMute,marginTop:2}}>{me.muscle}{pbs[mid]?` · PB ${pbs[mid].weight} × ${pbs[mid].reps}`:""}</div>
+          </div>
+          <div style={{borderRadius:24,background:C.field,border:`1px solid ${C.line}`,overflow:"hidden"}}>
+            {!isAdded&&row(svgI(<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>,C.orange),C.orangeBg,"Swap exercise",()=>{close();openSwapSession(menuEx.exerciseId,exMap[menuEx.exerciseId]?.muscle||me.muscle,exMap[menuEx.exerciseId]?.name||me.name);},{first:true})}
+            {row(svgI(<><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></>,C.blue),C.blueBg,"How to do it",()=>{close();setExerciseInfo({name:me.name,muscle:me.muscle});},{first:isAdded})}
+            {!isAdded&&planN>1&&row(svgI(<path d="M12 19V5M5 12l7-7 7 7"/>,C.text),"rgba(255,255,255,0.1)","Move up",()=>move(-1),{disabled:mpi===0})}
+            {!isAdded&&planN>1&&row(svgI(<path d="M12 5v14M19 12l-7 7-7-7"/>,C.text),"rgba(255,255,255,0.1)","Move down",()=>move(1),{disabled:mpi===planN-1})}
+            {isAdded&&row(svgI(<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>,C.red),C.redBg,"Remove from today",()=>{close();removeAdded(mid);},{danger:true})}
+          </div>
+          {!isAdded&&planN>1&&<div style={{fontSize:12,color:C.textMute,textAlign:"center",margin:"10px 16px 0",lineHeight:1.4}}>Moving an exercise keeps that order for every week of this plan.</div>}
+          <button onClick={close} style={{...pill,width:"100%",height:54,marginTop:12,fontSize:16,fontWeight:700}}>Done</button>
+        </div>
+      </div>);})()}
     {addingEx&&(()=>{
       const q=addSearch.trim().toLowerCase();
       const list=Object.values(exMap).filter(e=>!inSessionIds.has(e.id)&&(!q||e.name.toLowerCase().includes(q)||(e.muscle||"").toLowerCase().includes(q)))
         .sort((a,b)=>(a.muscle||"").localeCompare(b.muscle||"")||a.name.localeCompare(b.name));
       return(<div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.7)"}} onClick={()=>{setAddingEx(false);setAddSearch("");}}/>
-        <div style={{position:"relative",background:C.surface,borderRadius:"18px 18px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
-          <div style={{padding:"12px 18px 10px",borderBottom:"1px solid #e4ded4",flexShrink:0}}>
-            <div style={{width:36,height:4,background:C.lineStrong,borderRadius:2,margin:"0 auto 12px"}}/>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)"}} onClick={()=>{setAddingEx(false);setAddSearch("");}}/>
+        <div style={{position:"relative",background:"rgba(26,26,32,0.96)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",borderRadius:"34px 34px 0 0",border:`1px solid ${C.glassBorder}`,borderBottom:"none",maxHeight:"82vh",display:"flex",flexDirection:"column",boxShadow:`${C.glassHi}, 0 -10px 60px rgba(0,0,0,0.6)`}}>
+          <div style={{padding:"10px 18px 12px",flexShrink:0}}>
+            <div style={{width:38,height:5,background:C.lineStrong,borderRadius:3,margin:"0 auto 14px"}}/>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
               <div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,color:C.text}}>ADD EXERCISE</div>
-                <div style={{fontSize:11,color:C.textMute}}>Just for this session. Next week it is offered again.</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,letterSpacing:-0.5,color:C.text}}>Add exercise</div>
+                <div style={{fontSize:13,color:C.textMute,marginTop:2}}>Just for this session. Next week it is offered again.</div>
               </div>
-              <button onClick={()=>{setAddingEx(false);setAddSearch("");}} style={{background:C.field,border:"none",borderRadius:8,padding:"7px 10px",cursor:"pointer",color:C.textMute}}>{Ic.x}</button>
+              <button aria-label="Close" onClick={()=>{setAddingEx(false);setAddSearch("");}} style={{width:36,height:36,borderRadius:18,background:C.field,border:"none",cursor:"pointer",color:C.textMute,display:"flex",alignItems:"center",justifyContent:"center"}}>{Ic.x}</button>
             </div>
-            <input value={addSearch} onChange={e=>setAddSearch(e.target.value)} placeholder="Search by exercise or muscle" style={{...inp,fontSize:16}}/>
+            <input value={addSearch} onChange={ev=>setAddSearch(ev.target.value)} placeholder="Search by exercise or muscle" aria-label="Search exercises" style={{...inp,borderRadius:999,padding:"12px 18px"}}/>
           </div>
-          <div style={{overflowY:"auto",padding:"10px 16px 32px"}}>
-            {list.length===0?<div style={{textAlign:"center",padding:"20px 0",color:C.textMute,fontSize:13}}>No matches</div>:
-            <div style={card}>{list.map((e,i)=>(
-              <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid #e4ded4",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>addExercise(e.id)}>
-                <div style={{flex:1,fontWeight:500,fontSize:14,color:C.text}}>{e.name}</div>
+          <div style={{overflowY:"auto",padding:"0 14px",paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 20px)"}}>
+            {list.length===0?<div style={{textAlign:"center",padding:"20px 0",color:C.textMute,fontSize:14}}>No matches</div>:
+            <div style={{borderRadius:24,background:C.field,border:`1px solid ${C.line}`,overflow:"hidden"}}>{list.map((e,i)=>(
+              <button key={e.id} style={{width:"100%",minHeight:52,padding:"0 16px",border:"none",borderTop:i===0?"none":`1px solid ${C.line}`,background:"transparent",display:"flex",alignItems:"center",gap:10,cursor:"pointer",textAlign:"left"}} onClick={()=>addExercise(e.id)}>
+                <span style={{flex:1,fontWeight:550,fontSize:15,color:C.text,fontFamily:"'Inter',system-ui,sans-serif"}}>{e.name}</span>
                 <MuscleChip muscle={e.muscle}/>
-              </div>))}</div>}
+              </button>))}</div>}
           </div>
         </div>
       </div>);})()}
-
-    {/* Post-workout summary modal */}
-    {(summaryLoading||summary||pendingPbs.length>0)&&(
-      <div style={{position:"fixed",inset:0,zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,background:"rgba(0,0,0,0.75)"}}>
-        <div style={{background:C.surface,border:"1px solid #e8621a",borderRadius:16,padding:24,maxWidth:440,width:"100%",boxShadow:"0 8px 40px rgba(0,0,0,0.7)"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-            <div style={{fontSize:28}}>💪</div>
-            <div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.orange}}>SESSION COMPLETE</div>
-              <div style={{fontSize:11,color:C.textMute}}>{day.name} · Week {week}</div>
+    {completeOpen&&(()=>{
+      const st=sessionStats||{vol:0,prevVol:0,sets:0,extras:0};
+      const pct=st.prevVol>0?Math.round((st.vol-st.prevVol)/st.prevVol*100):null;
+      const pbNames=[...newPbIds].map(id=>exMap[id]?.name).filter(Boolean);
+      const tile=(label,big,small,smallCol)=>(<div style={{borderRadius:22,background:C.glass,border:`1px solid ${C.glassBorder}`,boxShadow:C.glassHi,padding:"14px 12px",minWidth:0}}>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:0.4,color:C.textMute}}>{label}</div>
+        <div style={{fontSize:21,fontWeight:800,letterSpacing:-0.6,marginTop:4,color:C.text,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{big}</div>
+        <div style={{fontSize:12,fontWeight:700,color:smallCol,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{small}</div></div>);
+      return(<div role="dialog" aria-label="Session complete" style={{position:"fixed",inset:0,zIndex:300,display:"flex",flexDirection:"column",background:`radial-gradient(circle at 50% 8%, rgba(48,209,88,0.28), transparent 36%), radial-gradient(circle at 100% 52%, rgba(255,106,26,0.26), transparent 40%), radial-gradient(circle at 0% 92%, rgba(56,110,255,0.20), transparent 40%), ${C.bg}`}}>
+        <div style={{flex:1,overflowY:"auto",padding:"0 12px 120px",paddingTop:"calc(env(safe-area-inset-top, 0px) + 36px)",maxWidth:480,width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
+            <div style={{width:72,height:72,borderRadius:36,background:"rgba(48,209,88,0.16)",border:"1px solid rgba(48,209,88,0.35)",boxShadow:"0 0 40px rgba(48,209,88,0.35)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
             </div>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:28,fontWeight:800,letterSpacing:-0.9,marginTop:14,color:C.text}}>Session complete</div>
+            <div style={{fontSize:14,color:C.textMute,marginTop:4}}>{day.name} · Week {week}</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:8,marginTop:22}}>
+            {tile("VOLUME",`${Math.round(st.vol).toLocaleString("en-GB")}`,pct==null?"kg":`${pct>=0?"+":""}${pct}% vs last`,pct==null?C.textMute:pct>=0?C.green:C.orange)}
+            {tile("SETS",`${st.sets}`,st.extras>0?`${st.extras} extra`:"logged",st.extras>0?C.gold:C.textMute)}
+            {tile("NEW PBs",`${pbNames.length}`,pbNames[0]||"none this time",pbNames.length?C.orange:C.textMute)}
           </div>
           {pendingPbs.length>0&&(
-            <div style={{background:C.goldBg,border:"1px solid #e8c46a",borderRadius:10,padding:14,marginBottom:18}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,color:C.text,marginBottom:2}}>QUICK CHECK</div>
-              <div style={{fontSize:12,color:C.textMute}}>{pendingPbs.length>1?"These look high for a new best. Were they real sets?":"This looks high for a new best. Was it a real set?"}</div>
+            <div style={{marginTop:12,borderRadius:26,background:"rgba(255,214,10,0.08)",border:"1px solid rgba(255,214,10,0.24)",boxShadow:C.glassHi,padding:16}}>
+              <div style={{fontSize:15,fontWeight:750,color:C.gold}}>⚠ Quick check</div>
+              <div style={{fontSize:13,color:C.textMute,marginTop:4,lineHeight:1.4}}>{pendingPbs.length>1?"These look high for a new best. Were they real sets?":"This looks high for a new best. Was it a real set?"}</div>
               {pendingPbs.map(p=>(
-                <div key={p.id} style={{borderTop:"1px solid #e8c46a",paddingTop:10,marginTop:10}}>
-                  <div style={{fontWeight:700,fontSize:14,color:C.text}}>{p.name}</div>
-                  <div style={{fontSize:12,color:C.textMute,marginBottom:8}}>{p.weight}kg × {p.reps} reps{p.prevReps!=null?` · previous best ${p.prevWeight}kg × ${p.prevReps}`:""}</div>
-                  <div style={{display:"flex",gap:8}}>
-                    <button style={{flex:1,padding:"9px",border:"none",borderRadius:7,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.3,textTransform:"uppercase",background:C.green,color:"white"}} onClick={()=>keepPb(p)}>Real, keep it</button>
-                    <button style={{flex:1,padding:"9px",border:"1px solid #d8d0c4",borderRadius:7,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.3,textTransform:"uppercase",background:C.surface,color:C.textMute}} onClick={()=>discardPb(p.id)}>Not real</button>
+                <div key={p.id} style={{marginTop:10,padding:"12px 14px",borderRadius:20,background:"rgba(0,0,0,0.25)"}}>
+                  <div style={{fontSize:16,fontWeight:700,color:C.text}}>{p.name}</div>
+                  <div style={{fontSize:13,color:C.textMute,marginTop:2}}><span style={{color:C.text,fontWeight:700}}>{p.weight}kg × {p.reps} reps</span>{p.prevReps!=null?` · previous best ${p.prevWeight}kg × ${p.prevReps}`:""}</div>
+                  <div style={{display:"flex",gap:8,marginTop:12}}>
+                    <button style={{...pill,flex:1,height:44,border:"none",background:C.green,color:C.onDark,fontWeight:750}} onClick={()=>keepPb(p)}>Real, keep it</button>
+                    <button style={{...pill,flex:1,height:44,fontWeight:700}} onClick={()=>discardPb(p.id)}>Not real</button>
                   </div>
                 </div>
               ))}
+              <div style={{fontSize:12,color:C.textMute,marginTop:10}}>Anything you don't confirm won't be saved as a PB.</div>
             </div>
           )}
-          {summaryLoading&&(
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"20px 0",color:C.textMute,fontSize:13}}>
-              <span style={{display:"inline-block",width:16,height:16,border:"2px solid #d8d0c4",borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+          {(summaryLoading||summary)&&<div style={{marginTop:12,borderRadius:26,background:C.glass,border:`1px solid ${C.glassBorder}`,boxShadow:C.glassHi,padding:16}}>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:0.6,color:C.orange}}>YOUR DEBRIEF</div>
+            {summaryLoading?<div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 0 4px",color:C.textMute,fontSize:14}}>
+              <span style={{display:"inline-block",width:16,height:16,border:"2px solid rgba(255,255,255,0.18)",borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
               Getting your session debrief…
-            </div>
-          )}
-          {summary&&!summaryLoading&&(
-            <div style={{fontSize:14,color:C.text,lineHeight:1.7,marginBottom:20}}>{summary}</div>
-          )}
-          {!summaryLoading&&(
-            <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"13px",background:C.orange,color:"white"}} onClick={()=>{setSummary(null);setPendingPbs([]);onBack();}}>
-              {pendingPbs.length>0?"Done":"Nice one, back to training"}
-            </button>
-          )}
+            </div>:<div style={{fontSize:15,color:C.text,lineHeight:1.6,marginTop:8}}>{summary}</div>}
+          </div>}
         </div>
-      </div>
-    )}
+        <div style={{position:"absolute",left:12,right:12,bottom:"calc(env(safe-area-inset-bottom, 0px) + 14px)",maxWidth:456,margin:"0 auto"}}>
+          <button onClick={closeComplete} style={{width:"100%",height:60,borderRadius:30,border:"none",background:C.orange,color:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)"}}>{pendingPbs.length>0?"Done":"Nice one, back to training"}</button>
+        </div>
+      </div>);})()}
     {swappingEx&&(
       <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
         <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.7)"}} onClick={()=>{setSwappingEx(null);setSwapBrowse(false);}}/>
-        <div style={{position:"relative",background:C.surface,borderRadius:"18px 18px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column",boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
-          <div style={{padding:"12px 18px 10px",borderBottom:"1px solid #e4ded4",flexShrink:0}}>
+        <div style={{position:"relative",background:"rgba(26,26,32,0.96)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderBottom:"none",borderRadius:"34px 34px 0 0",maxHeight:"82vh",display:"flex",flexDirection:"column",boxShadow:`${C.glassHi}, 0 -10px 60px rgba(0,0,0,0.6)`}}>
+          <div style={{padding:"12px 18px 10px",borderBottom:"1px solid rgba(255,255,255,0.10)",flexShrink:0}}>
             <div style={{width:36,height:4,background:C.lineStrong,borderRadius:2,margin:"0 auto 12px"}}/>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,color:C.text}}>SWAP EXERCISE</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:18,color:C.text}}>SWAP EXERCISE</div>
                 <div style={{fontSize:11,color:C.textMute}}>Replacing: {swappingEx.name}</div>
               </div>
               <button onClick={()=>{setSwappingEx(null);setSwapBrowse(false);}} style={{background:C.field,border:"none",borderRadius:8,padding:"7px 10px",cursor:"pointer",color:C.textMute}}>{Ic.x}</button>
@@ -2132,7 +2173,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
                     {swapSuggestions.map((s,i)=>{
                       const e=exMap[s.id];
                       return e?(
-                        <div key={s.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid #e4ded4",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(s.id)}>
+                        <div key={s.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.10)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(s.id)}>
                           <div style={{flex:1}}>
                             <div style={{fontWeight:600,fontSize:14,color:C.text}}>{e.name}</div>
                             <div style={{fontSize:11,color:C.orange,marginTop:2}}>{s.reason}</div>
@@ -2154,7 +2195,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
                 <button style={{...btn("ghost"),padding:"6px 10px",fontSize:12,marginBottom:12}} onClick={()=>setSwapBrowse(false)}>{Ic.back} Back to Suggestions</button>
                 <div style={card}>
                   {Object.values(exMap).filter(e=>e.muscle===swappingEx.muscle&&e.id!==(swappedExercises[swappingEx.originalId]||swappingEx.originalId)).map((e,i)=>(
-                    <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid #e4ded4",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(e.id)}>
+                    <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.10)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(e.id)}>
                       <div style={{flex:1,fontWeight:500,fontSize:14,color:C.text}}>{e.name}</div>
                       <span style={{color:C.orange,fontSize:18}}>›</span>
                     </div>
@@ -2178,13 +2219,13 @@ function PlansTab({plans,exercises,activePlanId,exMap,onActivate,onSavePlans}){
   return(<div style={{padding:"14px 14px 24px"}}>
     <div style={{display:"flex",gap:8,marginBottom:16}}>
       <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>setEditing("new")}>{Ic.plus} New Plan</button>
-      <button style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 16px",borderRadius:7,border:"1px solid #2f7fd6",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:C.orangeBg,color:C.orange}} onClick={()=>setAiBuilding(true)}>{"✨"} AI Builder</button>
+      <button style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 16px",borderRadius:7,border:"1px solid rgba(100,210,255,0.5)",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:C.orangeBg,color:C.orange}} onClick={()=>setAiBuilding(true)}>{"✨"} AI Builder</button>
     </div>
     {plans.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:C.textMute,fontSize:14}}>No plans yet.</div>}
-    {plans.map(p=>(<div key={p.id} style={{...card,border:p.id===activePlanId?"1px solid #1aa05f":"1px solid #e4ded4"}}>
+    {plans.map(p=>(<div key={p.id} style={{...card,border:p.id===activePlanId?"1px solid rgba(48,209,88,0.5)":"1px solid rgba(255,255,255,0.10)"}}>
       <div style={{padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>{p.id===activePlanId&&<div style={{fontSize:10,color:C.orange,fontWeight:700,letterSpacing:1,marginBottom:3}}>✓ ACTIVE</div>}
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:20,color:C.text}}>{p.name||"Unnamed Plan"}</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:20,color:C.text}}>{p.name||"Unnamed Plan"}</div>
           <div style={{fontSize:12,color:C.textMute,marginTop:2}}>{p.days.length} days · {p.weeks} weeks</div>
         </div>
         <div style={{display:"flex",gap:6}}>
@@ -2194,7 +2235,7 @@ function PlansTab({plans,exercises,activePlanId,exMap,onActivate,onSavePlans}){
         </div>
       </div>
       <div style={{padding:"0 14px 12px",display:"flex",flexWrap:"wrap",gap:5}}>
-        {p.days.map((d,i)=><span key={i} style={{fontSize:11,background:C.field,border:"1px solid #e4ded4",borderRadius:4,padding:"3px 7px",color:C.textMute}}>{d.name}</span>)}
+        {p.days.map((d,i)=><span key={i} style={{fontSize:11,background:C.field,border:"1px solid rgba(255,255,255,0.10)",borderRadius:4,padding:"3px 7px",color:C.textMute}}>{d.name}</span>)}
       </div>
       <div style={{padding:"0 14px 14px"}}>
         <VolumeAnalysis plan={p} exMap={exMap}/>
@@ -2219,18 +2260,18 @@ function PlanBuilder({plan:initial,exercises,exMap,onSave,onCancel}){
     <div style={{marginBottom:12}}><label style={lbl}>Plan Name</label><input style={inp} value={plan.name} onChange={e=>setPlan(p=>({...p,name:e.target.value}))} placeholder="e.g. Hypertrophy Block 2"/></div>
     <div style={{marginBottom:20}}><label style={lbl}>Total Weeks</label><input style={{...inp,width:120}} type="number" inputMode="numeric" min="4" max="24" value={plan.weeks} onChange={e=>setPlan(p=>({...p,weeks:parseInt(e.target.value)||12}))}/></div>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:16,color:C.text,letterSpacing:0.5}}>TRAINING DAYS</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:16,color:C.text,letterSpacing:0.5}}>TRAINING DAYS</div>
       <button style={{...btn("ghost"),padding:"7px 12px",fontSize:12}} onClick={addDay}>{Ic.plus} Add Day</button>
     </div>
     {plan.days.map((day,di)=>(<div key={di} style={{...card,marginBottom:12}}>
-      <div style={{padding:"10px 12px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid #e4ded4"}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.textMute,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,minWidth:40}}>DAY {di+1}</div>
+      <div style={{padding:"10px 12px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid rgba(255,255,255,0.10)"}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMute,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:1,minWidth:40}}>DAY {di+1}</div>
         <input style={{...inp,padding:"6px 10px",fontSize:14,flex:1}} value={day.name} onChange={e=>updateDayName(di,e.target.value)}/>
         <button style={{...btn("ghost"),padding:"6px 8px",opacity:di===0?0.3:1}} onClick={()=>moveDay(di,-1)} disabled={di===0}>▲</button>
         <button style={{...btn("ghost"),padding:"6px 8px",opacity:di===plan.days.length-1?0.3:1}} onClick={()=>moveDay(di,1)} disabled={di===plan.days.length-1}>▼</button>
         <button style={{...btn("danger"),padding:"6px 8px"}} onClick={()=>removeDay(di)}>{Ic.x}</button>
       </div>
-      {day.exercises.map((ex,ei)=>{const e=exMap[ex.exerciseId];return(<div key={ei} style={{borderBottom:"1px solid #efe9e1"}}>
+      {day.exercises.map((ex,ei)=>{const e=exMap[ex.exerciseId];return(<div key={ei} style={{borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
         <div style={{padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
           <div style={{flex:1}}><div style={{fontWeight:600,fontSize:14,color:C.text}}>{e?.name}</div><MuscleChip muscle={e?.muscle||""}/></div>
           <button style={{...btn("danger"),padding:"5px 7px"}} onClick={()=>removeEx(di,ei)}>{Ic.x}</button>
@@ -2274,12 +2315,12 @@ function ExercisePicker({exercises,existing,onPick,onCancel}){
   return(<div style={{padding:"14px 14px 24px"}}>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
       <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={onCancel}>{Ic.back}</button>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:18,color:C.text}}>ADD EXERCISE</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:18,color:C.text}}>ADD EXERCISE</div>
     </div>
     <div style={{position:"relative",marginBottom:10}}><div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textMute}}>{Ic.search}</div><input style={{...inp,paddingLeft:34}} placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
     <MuscleFilter active={muscle} onChange={setMuscle}/>
     <div style={card}>
-      {filtered.map((e,i)=>{const already=existing.includes(e.id);return(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderTop:i===0?"none":"1px solid #efe9e1",opacity:already?0.4:1,cursor:already?"default":"pointer"}} onClick={()=>!already&&onPick(e.id)}>
+      {filtered.map((e,i)=>{const already=existing.includes(e.id);return(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",opacity:already?0.4:1,cursor:already?"default":"pointer"}} onClick={()=>!already&&onPick(e.id)}>
         <div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/>{already?<span style={{fontSize:11,color:C.textMute}}>Added</span>:<span style={{color:C.orange}}>{Ic.plus}</span>}
       </div>);})}
       {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:C.textMute,fontSize:13}}>No exercises found</div>}
@@ -2298,7 +2339,7 @@ function ExercisesTab({exercises,onSave}){
     <div style={{position:"relative",marginBottom:10}}><div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textMute}}>{Ic.search}</div><input style={{...inp,paddingLeft:34}} placeholder="Search exercises…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
     <MuscleFilter active={muscle} onChange={setMuscle}/>
     {adding&&(<div style={{...card,padding:14,marginBottom:12}}>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,marginBottom:10,color:C.text}}>NEW EXERCISE</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,marginBottom:10,color:C.text}}>NEW EXERCISE</div>
       <input style={{...inp,marginBottom:8}} placeholder="Exercise name" value={newEx.name} onChange={e=>setNewEx(p=>({...p,name:e.target.value}))}/>
       <select style={{...inp,marginBottom:10}} value={newEx.muscle} onChange={e=>setNewEx(p=>({...p,muscle:e.target.value}))}>{MUSCLES.map(m=><option key={m} value={m}>{m}</option>)}</select>
       <div style={{display:"flex",gap:8}}>
@@ -2308,7 +2349,7 @@ function ExercisesTab({exercises,onSave}){
     </div>)}
     {!adding&&<button style={{...btn("ghost"),width:"100%",justifyContent:"center",marginBottom:12}} onClick={()=>setAdding(true)}>{Ic.plus} Add Custom Exercise</button>}
     <div style={card}>
-      {filtered.map((e,i)=>(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderTop:i===0?"none":"1px solid #efe9e1"}}><div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/></div>))}
+      {filtered.map((e,i)=>(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}><div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/></div>))}
       {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:C.textMute,fontSize:13}}>No exercises found</div>}
     </div>
     <div style={{fontSize:11,color:C.textMute,textAlign:"center",marginTop:10}}>{exercises.length} exercises in library</div>
@@ -2324,15 +2365,15 @@ function PBsTab({pbs,exMap,onSavePbs}){
     onSavePbs(updated);
   };
   const entries=Object.entries(pbs).map(([id,pb])=>({id,...pb,ex:exMap[id]})).filter(e=>e.ex).sort((a,b)=>est1RM(b.weight,b.reps)-est1RM(a.weight,a.reps));
-  if(entries.length===0)return(<div style={{padding:32,textAlign:"center",color:C.textMute}}><div style={{fontSize:48,marginBottom:8}}>🏆</div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:700,color:C.lineStrong,marginBottom:6}}>NO PBs YET</div><div style={{fontSize:13}}>Start logging sessions and your personal bests will appear here automatically.</div></div>);
+  if(entries.length===0)return(<div style={{padding:32,textAlign:"center",color:C.textMute}}><div style={{fontSize:48,marginBottom:8}}>🏆</div><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:20,fontWeight:700,color:C.lineStrong,marginBottom:6}}>NO PBs YET</div><div style={{fontSize:13}}>Start logging sessions and your personal bests will appear here automatically.</div></div>);
   const byMuscle={};entries.forEach(e=>{const m=e.ex?.muscle||"Other";if(!byMuscle[m])byMuscle[m]=[];byMuscle[m].push(e);});
   return(<div style={{padding:"14px 14px 32px"}}>
-    <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.textMute,marginBottom:16,fontFamily:"'Barlow Condensed',sans-serif"}}>PERSONAL BESTS · {entries.length} EXERCISES</div>
+    <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.textMute,marginBottom:16,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif"}}>PERSONAL BESTS · {entries.length} EXERCISES</div>
     {Object.entries(byMuscle).map(([muscle,list])=>(<div key={muscle} style={{marginBottom:14}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><div style={{width:6,height:6,borderRadius:"50%",background:MC[muscle]||C.textMute}}/><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,color:MC[muscle]||C.textMute,letterSpacing:1,textTransform:"uppercase"}}>{muscle}</div></div>
-      <div style={card}>{list.map((e,i)=>{const orm=est1RM(e.weight,e.reps),date=e.date?new Date(e.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";return(<div key={e.id} style={{padding:"10px 14px",borderTop:i===0?"none":"1px solid #efe9e1",display:"flex",alignItems:"center",gap:10}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><div style={{width:6,height:6,borderRadius:"50%",background:MC[muscle]||C.textMute}}/><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,color:MC[muscle]||C.textMute,letterSpacing:1,textTransform:"uppercase"}}>{muscle}</div></div>
+      <div style={card}>{list.map((e,i)=>{const orm=est1RM(e.weight,e.reps),date=e.date?new Date(e.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";return(<div key={e.id} style={{padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10}}>
         <div style={{flex:1}}><div style={{fontWeight:600,fontSize:14,color:C.text}}>{e.ex.name}</div><div style={{fontSize:11,color:C.textMute,marginTop:2}}>{date}</div></div>
-        <div style={{textAlign:"right"}}><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.orange}}>{e.weight}<span style={{fontSize:12,fontWeight:500}}>kg</span></div><div style={{fontSize:11,color:C.textMute}}>{e.reps} reps · est {orm}kg 1RM</div></div>
+        <div style={{textAlign:"right"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.orange}}>{e.weight}<span style={{fontSize:12,fontWeight:500}}>kg</span></div><div style={{fontSize:11,color:C.textMute}}>{e.reps} reps · est {orm}kg 1RM</div></div>
                   <button style={{...btn("danger"),padding:"5px 7px",marginLeft:6,flexShrink:0}} onClick={()=>deletePb(e.id)}>{Ic.trash}</button>
       </div>);})}
       </div>
@@ -2372,18 +2413,18 @@ function AIPlanBuilder({exercises,exMap,onSave,onCancel}){
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
         <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={onCancel}>{Ic.back}</button>
         <div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:20,color:C.orange}}>{"✨"} AI PLAN BUILDER</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,color:C.orange}}>{"✨"} AI PLAN BUILDER</div>
           <div style={{fontSize:12,color:C.textMute,marginTop:1}}>Describe what you want and Claude builds it</div>
         </div>
       </div>
 
-      <div style={{...card,padding:14,marginBottom:14,background:C.orangeBg,border:"1px solid #dfeaf8"}}>
+      <div style={{...card,padding:14,marginBottom:14,background:C.orangeBg,border:"1px solid rgba(100,210,255,0.28)"}}>
         <div style={{fontSize:12,color:C.orange,lineHeight:1.6}}>
           Describe your training goal, how many days per week, experience level, and any preferences. Claude will build a full plan using your exercise library.
         </div>
         <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:6}}>
           {["4 day upper/lower split, 12 weeks, intermediate","3 day full body, beginner, focus on compounds","5 day PPL split, advanced, high volume"].map(eg=>(
-            <button key={eg} onClick={()=>setDescription(eg)} style={{fontSize:11,background:C.orangeBg,border:"1px solid #dfeaf8",borderRadius:5,padding:"4px 8px",color:C.orange,cursor:"pointer",fontFamily:"'Barlow',sans-serif"}}>
+            <button key={eg} onClick={()=>setDescription(eg)} style={{fontSize:11,background:C.orangeBg,border:"1px solid rgba(100,210,255,0.28)",borderRadius:5,padding:"4px 8px",color:C.orange,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif"}}>
               {eg}
             </button>
           ))}
@@ -2396,14 +2437,14 @@ function AIPlanBuilder({exercises,exMap,onSave,onCancel}){
           value={description}
           onChange={e=>setDescription(e.target.value)}
           placeholder="e.g. 4 day upper/lower hypertrophy split, 12 weeks with a deload on week 6, intermediate level, I want to focus on chest and back growth..."
-          style={{background:C.field,border:"1px solid #e4ded4",borderRadius:7,padding:"12px 14px",color:C.text,width:"100%",fontSize:14,minHeight:120,resize:"vertical",fontFamily:"'Barlow',sans-serif",lineHeight:1.5}}
+          style={{background:C.field,border:"1px solid rgba(255,255,255,0.10)",borderRadius:7,padding:"12px 14px",color:C.text,width:"100%",fontSize:14,minHeight:120,resize:"vertical",fontFamily:"'Inter',system-ui,sans-serif",lineHeight:1.5}}
         />
       </div>
 
-      {error&&<div style={{background:C.redBg,border:"1px solid #f8e0e0",borderRadius:7,padding:"10px 14px",fontSize:13,color:C.red,marginBottom:12}}>{error}</div>}
+      {error&&<div style={{background:C.redBg,border:"1px solid rgba(255,69,58,0.28)",borderRadius:7,padding:"10px 14px",fontSize:13,color:C.red,marginBottom:12}}>{error}</div>}
 
       <button
-        style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"14px",background:loading?C.orangeBg:C.orange,color:"white",opacity:loading||!description.trim()?0.6:1}}
+        style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"14px",background:loading?C.orangeBg:C.orange,color:C.ink,opacity:loading||!description.trim()?0.6:1}}
         onClick={generate}
         disabled={loading||!description.trim()}
       >
@@ -2490,7 +2531,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={()=>{setSwapping(null);setBrowsingSwap(false);}}>{Ic.back}</button>
           <div>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,color:C.text}}>SWAP EXERCISE</div>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:18,color:C.text}}>SWAP EXERCISE</div>
             <div style={{fontSize:11,color:C.textMute,marginTop:1}}>Replacing: {swapping.name}</div>
           </div>
         </div>
@@ -2508,7 +2549,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
                 {suggestions.map((s,i) => {
                   const e = exMap[s.id];
                   return e ? (
-                    <div key={s.id} style={{padding:"12px 14px",borderTop:i===0?"none":"1px solid #efe9e1",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(s.id)}>
+                    <div key={s.id} style={{padding:"12px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(s.id)}>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:600,fontSize:14,color:C.text}}>{e.name}</div>
                         <div style={{fontSize:11,color:C.orange,marginTop:2}}>{s.reason}</div>
@@ -2541,12 +2582,12 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
               {/* Muscle group filter */}
               <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10}}>
                 {MUSCLES.map(m => (
-                  <button key={m} onClick={()=>setBrowseMuscle(m)} style={{flexShrink:0,padding:"6px 12px",borderRadius:6,border:"1px solid",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5,textTransform:"uppercase",background:filterMuscle===m?(MC[m]||C.orange):"transparent",color:filterMuscle===m?C.text:C.textMute,borderColor:filterMuscle===m?(MC[m]||C.orange):C.lineStrong}}>{m}</button>
+                  <button key={m} onClick={()=>setBrowseMuscle(m)} style={{flexShrink:0,padding:"6px 12px",borderRadius:6,border:"1px solid",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:0.5,textTransform:"uppercase",background:filterMuscle===m?(MC[m]||C.orange):"transparent",color:filterMuscle===m?C.text:C.textMute,borderColor:filterMuscle===m?(MC[m]||C.orange):C.lineStrong}}>{m}</button>
                 ))}
               </div>
               <div style={card}>
                 {browseList.map((e,i) => (
-                  <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid #efe9e1",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(e.id)}>
+                  <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(e.id)}>
                     <div style={{flex:1,fontWeight:500,fontSize:14,color:C.text}}>{e.name}</div>
                     <span style={{color:C.orange,fontSize:18}}>›</span>
                   </div>
@@ -2566,20 +2607,20 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
         <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={onRegenerate}>{Ic.back}</button>
         <div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:20,color:C.orange}}>{"✨"} AI GENERATED</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,color:C.orange}}>{"✨"} AI GENERATED</div>
           <div style={{fontSize:12,color:C.textMute,marginTop:1}}>Tap the swap icon to replace any exercise</div>
         </div>
       </div>
 
-      <div style={{...card,padding:14,marginBottom:14,background:C.orangeBg,border:"1px solid #dfeaf8"}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.text}}>{plan.name}</div>
+      <div style={{...card,padding:14,marginBottom:14,background:C.orangeBg,border:"1px solid rgba(100,210,255,0.28)"}}>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text}}>{plan.name}</div>
         <div style={{fontSize:12,color:C.orange,marginTop:2}}>{plan.days?.length} days · {plan.weeks} weeks</div>
       </div>
 
       {plan.days?.map((day,di)=>(
         <div key={di} style={{...card,marginBottom:10}}>
-          <div style={{padding:"10px 14px",borderBottom:"1px solid #e4ded4"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:16,color:C.text}}>{day.name}</div>
+          <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.10)"}}>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:16,color:C.text}}>{day.name}</div>
             <div style={{fontSize:11,color:C.textMute,marginTop:2}}>{day.exercises?.length} exercises</div>
           </div>
           {day.exercises?.map((ex,ei)=>{
@@ -2589,15 +2630,15 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
               onPlanChange({...plan,days:plan.days.map((d,ddi)=>ddi!==di?d:{...d,exercises:d.exercises.map((exr,eei)=>eei!==ei?exr:{...exr,setConfigs:[{...exr.setConfigs[0],[field]:val}]})})});
             };
             return(
-              <div key={ei} style={{borderTop:ei===0?"none":"1px solid #efe9e1"}}>
+              <div key={ei} style={{borderTop:ei===0?"none":"1px solid rgba(255,255,255,0.07)"}}>
                 <div style={{padding:"9px 14px",display:"flex",alignItems:"center",gap:10}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:500,fontSize:14,color:e?C.text:C.red}}>{e?e.name:`Unknown (${ex.exerciseId})`}</div>
                     {e&&<MuscleChip muscle={e.muscle}/>}
                   </div>
                   <div style={{display:"flex",gap:5,flexShrink:0}}>
-                    {e&&<button style={{background:C.orangeBg,border:"1px solid #fae7d8",borderRadius:6,padding:"5px 8px",cursor:"pointer",color:C.orange,fontSize:12,fontWeight:700}} onClick={()=>openSwap(di,ei,ex)}>{"⇄"}</button>}
-                    <button style={{background:C.redBg,border:"1px solid #f8e0e0",borderRadius:6,padding:"5px 8px",cursor:"pointer",color:C.red,display:"inline-flex",alignItems:"center",justifyContent:"center"}} onClick={()=>{onPlanChange({...plan,days:plan.days.map((d,ddi)=>ddi!==di?d:{...d,exercises:d.exercises.filter((_,eei)=>eei!==ei)})});}}>
+                    {e&&<button style={{background:C.orangeBg,border:"1px solid rgba(255,122,46,0.28)",borderRadius:6,padding:"5px 8px",cursor:"pointer",color:C.orange,fontSize:12,fontWeight:700}} onClick={()=>openSwap(di,ei,ex)}>{"⇄"}</button>}
+                    <button style={{background:C.redBg,border:"1px solid rgba(255,69,58,0.28)",borderRadius:6,padding:"5px 8px",cursor:"pointer",color:C.red,display:"inline-flex",alignItems:"center",justifyContent:"center"}} onClick={()=>{onPlanChange({...plan,days:plan.days.map((d,ddi)=>ddi!==di?d:{...d,exercises:d.exercises.filter((_,eei)=>eei!==ei)})});}}>
                       {Ic.trash}
                     </button>
                   </div>
@@ -2633,17 +2674,17 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
 
       {/* AI Feedback */}
       <div style={{...card,padding:14,marginBottom:14,background:C.surfaceAlt}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,color:C.orange,marginBottom:4}}>{"✨"} Refine with AI</div>
+        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,color:C.orange,marginBottom:4}}>{"✨"} Refine with AI</div>
         <div style={{fontSize:12,color:C.textMute,marginBottom:10}}>Happy with most of it but want tweaks? Describe what to change and Claude will edit the plan for you.</div>
         <textarea
           value={feedback}
           onChange={e=>setFeedback(e.target.value)}
           placeholder="e.g. Could do with more chest volume, and swap out the leg press for hack squat..."
-          style={{background:C.field,border:"1px solid #d8d0c4",borderRadius:8,padding:"10px 12px",color:C.text,width:"100%",fontSize:13,minHeight:72,resize:"none",fontFamily:"'Barlow',sans-serif",lineHeight:1.5,boxSizing:"border-box",marginBottom:8}}
+          style={{background:C.field,border:"1px solid rgba(255,255,255,0.18)",borderRadius:8,padding:"10px 12px",color:C.text,width:"100%",fontSize:13,minHeight:72,resize:"none",fontFamily:"'Inter',system-ui,sans-serif",lineHeight:1.5,boxSizing:"border-box",marginBottom:8}}
         />
         {refineError&&<div style={{fontSize:12,color:C.red,marginBottom:8}}>{refineError}</div>}
         <button
-          style={{...btn("primary"),width:"100%",justifyContent:"center",background:refining?C.orangeBg:C.orange,color:"white",opacity:!feedback.trim()||refining?0.6:1}}
+          style={{...btn("primary"),width:"100%",justifyContent:"center",background:refining?C.orangeBg:C.orange,color:C.ink,opacity:!feedback.trim()||refining?0.6:1}}
           onClick={refinePlan}
           disabled={!feedback.trim()||refining}
         >
@@ -2696,11 +2737,11 @@ function ExerciseInfoPanel({name, muscle, onClose}){
       <div style={{position:"relative",background:C.surface,borderRadius:"18px 18px 0 0",maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
 
         {/* Handle + header */}
-        <div style={{padding:"12px 18px 10px",borderBottom:"1px solid #e4ded4",flexShrink:0}}>
+        <div style={{padding:"12px 18px 10px",borderBottom:"1px solid rgba(255,255,255,0.10)",flexShrink:0}}>
           <div style={{width:36,height:4,background:C.lineStrong,borderRadius:2,margin:"0 auto 12px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:20,color:C.text}}>{name}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,color:C.text}}>{name}</div>
               <MuscleChip muscle={muscle}/>
             </div>
             <button onClick={onClose} style={{background:C.field,border:"none",borderRadius:8,padding:"8px 10px",cursor:"pointer",color:C.textMute}}>{Ic.x}</button>
@@ -2720,16 +2761,16 @@ function ExerciseInfoPanel({name, muscle, onClose}){
             <>
               {/* Setup */}
               <div style={{marginBottom:18}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:6}}>Setup</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:6}}>Setup</div>
                 <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>{info.setup}</div>
               </div>
 
               {/* Execution */}
               <div style={{marginBottom:18}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>How To Perform</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>How To Perform</div>
                 {info.execution?.map((step,i)=>(
                   <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
-                    <div style={{width:22,height:22,borderRadius:"50%",background:C.orange,color:"white",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0,fontFamily:"'Barlow Condensed',sans-serif"}}>{i+1}</div>
+                    <div style={{width:22,height:22,borderRadius:"50%",background:C.orange,color:C.ink,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif"}}>{i+1}</div>
                     <div style={{fontSize:14,color:C.text,lineHeight:1.5,paddingTop:2}}>{step}</div>
                   </div>
                 ))}
@@ -2737,18 +2778,18 @@ function ExerciseInfoPanel({name, muscle, onClose}){
 
               {/* Muscles */}
               <div style={{marginBottom:18}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>Muscles Worked</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>Muscles Worked</div>
                 <div style={{marginBottom:6}}>
                   <span style={{fontSize:11,color:C.textMute,fontWeight:600}}>PRIMARY: </span>
                   {info.primaryMuscles?.map((m,i)=>(
-                    <span key={i} style={{fontSize:12,background:C.orangeBg,border:"1px solid #fae7d8",borderRadius:4,padding:"2px 7px",color:C.orange,marginRight:4,display:"inline-block",marginBottom:4}}>{m}</span>
+                    <span key={i} style={{fontSize:12,background:C.orangeBg,border:"1px solid rgba(255,122,46,0.28)",borderRadius:4,padding:"2px 7px",color:C.orange,marginRight:4,display:"inline-block",marginBottom:4}}>{m}</span>
                   ))}
                 </div>
                 {info.secondaryMuscles?.length>0&&(
                   <div>
                     <span style={{fontSize:11,color:C.textMute,fontWeight:600}}>SECONDARY: </span>
                     {info.secondaryMuscles.map((m,i)=>(
-                      <span key={i} style={{fontSize:12,background:C.field,border:"1px solid #d8d0c4",borderRadius:4,padding:"2px 7px",color:C.textMute,marginRight:4,display:"inline-block",marginBottom:4}}>{m}</span>
+                      <span key={i} style={{fontSize:12,background:C.field,border:"1px solid rgba(255,255,255,0.18)",borderRadius:4,padding:"2px 7px",color:C.textMute,marginRight:4,display:"inline-block",marginBottom:4}}>{m}</span>
                     ))}
                   </div>
                 )}
@@ -2756,7 +2797,7 @@ function ExerciseInfoPanel({name, muscle, onClose}){
 
               {/* Form cues */}
               <div style={{marginBottom:18}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>Key Form Cues</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>Key Form Cues</div>
                 {info.formCues?.map((cue,i)=>(
                   <div key={i} style={{display:"flex",gap:8,marginBottom:6,alignItems:"flex-start"}}>
                     <span style={{color:C.orange,fontSize:14,flexShrink:0}}>✓</span>
@@ -2767,7 +2808,7 @@ function ExerciseInfoPanel({name, muscle, onClose}){
 
               {/* Common mistakes */}
               <div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>Common Mistakes</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.orange,textTransform:"uppercase",marginBottom:8}}>Common Mistakes</div>
                 {info.commonMistakes?.map((m,i)=>(
                   <div key={i} style={{display:"flex",gap:8,marginBottom:6,alignItems:"flex-start"}}>
                     <span style={{color:C.red,fontSize:14,flexShrink:0}}>✗</span>
@@ -2923,7 +2964,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
   const miniStat=(label,valEl,sub,color)=>(
     <div key={label} style={{flex:"1 1 45%",background:C.surface,border:`1px solid ${C.line}`,borderRadius:10,padding:"10px 12px",minWidth:0}}>
       <div style={{fontSize:9,color:C.textMute,fontWeight:700,letterSpacing:0.7,marginBottom:3,textTransform:"uppercase"}}>{label}</div>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:21,color:color||C.text,lineHeight:1}}>{valEl}</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:21,color:color||C.text,lineHeight:1}}>{valEl}</div>
       {sub&&<div style={{fontSize:10,marginTop:3}}>{sub}</div>}
     </div>
   );
@@ -2939,7 +2980,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
     <div style={{padding:"14px 14px 32px"}}>
 
       {/* Welcome */}
-      <div style={{...card,padding:"12px 14px",marginBottom:12,background:C.orangeBg,border:"1px solid #fae7d8"}}>
+      <div style={{...card,padding:"12px 14px",marginBottom:12,background:C.orangeBg,border:"1px solid rgba(255,122,46,0.28)"}}>
         <div style={{fontSize:11,color:C.orange,fontWeight:600,letterSpacing:0.5,marginBottom:4}}>WELCOME BACK</div>
         {editingName?(
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -2950,7 +2991,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
           </div>
         ):(
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:22,color:C.text}}>{userName||session.email}</div>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:22,color:C.text}}>{userName||session.email}</div>
             <button style={{background:"none",border:"none",cursor:"pointer",color:C.orange,padding:4}} onClick={()=>{setNameInput(userName||"");setEditingName(true);}}>{Ic.edit}</button>
           </div>
         )}
@@ -2970,7 +3011,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
       {/* Today's check-in status */}
       <div style={{...card,padding:14,marginBottom:12}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase"}}>Today's Check-in</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase"}}>Today's Check-in</div>
           <div style={{fontSize:11,fontWeight:700,color:doneCount===todayItems.length?C.green:C.textMute}}>{doneCount}/{todayItems.length}</div>
         </div>
         <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
@@ -2995,7 +3036,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
       {/* Week strip + streak */}
       <div style={{...card,padding:"12px 14px",marginBottom:12}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase"}}>This Week</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase"}}>This Week</div>
           {streak>1&&<div style={{fontSize:12,fontWeight:700,color:C.orange}}>🔥 {streak}-day streak</div>}
         </div>
         <div style={{display:"flex",gap:6}}>
@@ -3021,14 +3062,14 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
       {/* Recovery snapshot */}
       {recovery&&(
         <div style={{...card,padding:14,marginBottom:12}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase",marginBottom:10}}>Recovery</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase",marginBottom:10}}>Recovery</div>
           <div style={{display:"flex",gap:8,marginBottom:10}}>
             {[["SLEEP",recovery.sleep!=null?`${recovery.sleep}h`:"—",recovery.sleepAvg!=null?`avg ${Math.round(recovery.sleepAvg*10)/10}h`:null,C.blue],
               ["HRV",recovery.hrv?recovery.hrv.v:"—",recovery.hrvAvg!=null?`avg ${Math.round(recovery.hrvAvg)}`:null,C.green],
               ["RHR",recovery.rhr?recovery.rhr.v:"—",recovery.rhrAvg!=null?`avg ${Math.round(recovery.rhrAvg)}`:null,C.red]].map(([l,v,sub,c])=>(
               <div key={l} style={{flex:1,background:C.surfaceAlt,border:`1px solid ${c}22`,borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
                 <div style={{fontSize:9,color:c,fontWeight:700,letterSpacing:0.5}}>{l}</div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:20,color:c}}>{v}</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,color:c}}>{v}</div>
                 {sub&&<div style={{fontSize:9,color:C.textMute}}>{sub}</div>}
               </div>
             ))}
@@ -3043,7 +3084,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
       {/* Weekly form summary */}
       {weekSummary&&(
         <div style={{marginBottom:12}}>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase",margin:"0 2px 8px"}}>This Week's Averages</div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase",margin:"0 2px 8px"}}>This Week's Averages</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
             {weekSummary.weight.this!=null&&miniStat("Weight",<>{weekSummary.weight.this}<span style={{fontSize:11,fontWeight:500}}>kg</span></>,delta(weekSummary.weight.this,weekSummary.weight.last,"kg",true),C.orange)}
             {weekSummary.kcal.this!=null&&miniStat("Calories",<>{Math.round(weekSummary.kcal.this).toLocaleString()}</>,kcalTarget?<span style={{color:Math.round(weekSummary.kcal.this)<=kcalTarget?C.green:C.red}}>target {kcalTarget.toLocaleString()}</span>:delta(weekSummary.kcal.this,weekSummary.kcal.last,"",true),C.blue)}
@@ -3059,22 +3100,22 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
             <div>
               <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Active Plan</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:20,color:C.text}}>{activePlan.name}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,color:C.text}}>{activePlan.name}</div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:32,color:C.orange,lineHeight:1}}>WK {currentWeek}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:32,color:C.orange,lineHeight:1}}>WK {currentWeek}</div>
               <div style={{fontSize:11,color:C.textMute}}>{weeksLeft!=null?`${weeksLeft} wks left`:""}</div>
             </div>
           </div>
           <div style={{display:"flex",gap:8,marginBottom:12}}>
             <div style={{flex:1,background:C.field,borderRadius:8,padding:"10px",textAlign:"center"}}>
               <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:0.5,marginBottom:4}}>THIS WEEK VOL</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:18,color:C.text}}>{Math.round(thisWeekVol).toLocaleString()}<span style={{fontSize:11,fontWeight:400}}>kg</span></div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:18,color:C.text}}>{Math.round(thisWeekVol).toLocaleString()}<span style={{fontSize:11,fontWeight:400}}>kg</span></div>
               {lastWeekVol>0&&<div style={{fontSize:10,color:volDiff>=0?C.green:C.red,marginTop:2}}>{volDiff>=0?"+":""}{Math.round(volDiff).toLocaleString()}kg vs last wk</div>}
             </div>
             <div style={{flex:1,background:C.field,borderRadius:8,padding:"10px",textAlign:"center"}}>
               <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:0.5,marginBottom:4}}>DAYS LOGGED</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:18,color:C.text}}>{Object.keys(planLogs[currentWeek]||{}).filter(k=>!isNaN(k)).length}<span style={{fontSize:11,fontWeight:400}}>/{activePlan.days.length}</span></div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:18,color:C.text}}>{Object.keys(planLogs[currentWeek]||{}).filter(k=>!isNaN(k)).length}<span style={{fontSize:11,fontWeight:400}}>/{activePlan.days.length}</span></div>
               <div style={{fontSize:10,color:C.textMute,marginTop:2}}>this week</div>
             </div>
           </div>
@@ -3102,14 +3143,14 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
             <div style={{fontSize:11,color:C.textMute,marginTop:1}}>{new Date(recentPbRow[1].date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div>
           </div>
           <div style={{textAlign:"right"}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.orange}}>{recentPbRow[1].weight}<span style={{fontSize:12,fontWeight:400}}>kg</span></div>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.orange}}>{recentPbRow[1].weight}<span style={{fontSize:12,fontWeight:400}}>kg</span></div>
             <div style={{fontSize:11,color:C.textMute}}>{recentPbRow[1].reps} reps</div>
           </div>
         </div>
       )}
 
       {/* Daily tip */}
-      <div style={{...card,padding:"14px",marginBottom:4,background:C.orangeBg,border:"1px solid #fae7d8"}}>
+      <div style={{...card,padding:"14px",marginBottom:4,background:C.orangeBg,border:"1px solid rgba(255,122,46,0.28)"}}>
         <div style={{fontSize:10,color:C.orange,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
           {"✨"} Coach's Tip of the Day
         </div>
@@ -3134,7 +3175,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
         } else {
           window.open(waUrl,"_blank");
         }
-      }} style={{width:"100%",marginTop:12,padding:"13px",borderRadius:10,border:"none",cursor:"pointer",background:"#25D366",color:"white",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:15,letterSpacing:0.5,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+      }} style={{width:"100%",marginTop:12,padding:"13px",borderRadius:10,border:"none",cursor:"pointer",background:"#25D366",color:"white",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:15,letterSpacing:0.5,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
         <svg viewBox="0 0 24 24" fill="white" style={{width:18,height:18}}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/></svg>
         Share App with Friends
       </button>
@@ -3176,7 +3217,7 @@ function VolumeAnalysis({plan, exMap}){
 
   return(
     <div>
-      <button onClick={()=>setOpen(o=>!o)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:6,padding:0,color:C.orange,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase"}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:6,padding:0,color:C.orange,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase"}}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:13,height:13}}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
         Volume Analysis {open?"▲":"▼"}
       </button>
@@ -3253,7 +3294,7 @@ function CardioTab({data,onSave}){
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:6}}>CARDIO SESSIONS</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:6}}>CARDIO SESSIONS</div>
       <div style={{fontSize:12,color:C.textMute,marginBottom:14}}>👟 Daily steps are now logged in your Daily Check-in tab.</div>
 
       <div style={{...card,padding:14,marginBottom:12}}>
@@ -3293,7 +3334,7 @@ function CardioTab({data,onSave}){
           {/* Calorie target */}
           <div style={{...card,padding:14,marginBottom:12}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:editingCalTarget?10:0}}>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.textMute,textTransform:"uppercase",fontFamily:"'Barlow Condensed',sans-serif"}}>Weekly Calorie Target</div>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.textMute,textTransform:"uppercase",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif"}}>Weekly Calorie Target</div>
               {!editingCalTarget&&<button style={{background:"none",border:"none",cursor:"pointer",color:C.orange,padding:4}} onClick={()=>setEditingCalTarget(true)}>{Ic.edit}</button>}
             </div>
             {editingCalTarget&&(
@@ -3324,18 +3365,18 @@ function CardioTab({data,onSave}){
           <div style={{display:"flex",gap:8,marginBottom:12}}>
             <div style={statBox(C.green)}>
               <div style={{fontSize:10,color:C.green,fontWeight:700,letterSpacing:1,marginBottom:4}}>TOTAL SESSIONS</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:28,color:C.green,lineHeight:1}}>{sessions.length}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:28,color:C.green,lineHeight:1}}>{sessions.length}</div>
             </div>
             <div style={statBox(C.blue)}>
               <div style={{fontSize:10,color:C.blue,fontWeight:700,letterSpacing:1,marginBottom:4}}>TOTAL CALS</div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:28,color:C.blue,lineHeight:1}}>{sessions.filter(s=>s.calories).reduce((t,s)=>t+s.calories,0).toLocaleString()}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:28,color:C.blue,lineHeight:1}}>{sessions.filter(s=>s.calories).reduce((t,s)=>t+s.calories,0).toLocaleString()}</div>
             </div>
           </div>
 
           <SectionHead label={`Session Log (${sessions.length})`}/>
           <div style={card}>
             {displayedSess.map((s,i)=>(
-              <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderTop:i===0?"none":"1px solid #efe9e1"}}>
+              <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:600,fontSize:14,color:C.text}}>{s.type}</div>
                   <div style={{fontSize:11,color:C.textMute,marginTop:2}}>{fmtDate(s.date)} · {s.duration} mins{s.distance?` · ${s.distance}km`:""}{s.calories?` · ${s.calories} cal`:""}</div>
@@ -3343,11 +3384,11 @@ function CardioTab({data,onSave}){
                 <button style={{...btn("danger"),padding:"5px 7px"}} onClick={()=>removeSession(s.id)}>{Ic.trash}</button>
               </div>
             ))}
-            {sessions.length>14&&<div style={{padding:"10px 14px",borderTop:"1px solid #efe9e1",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllSess(!showAllSess)}>{showAllSess?"Show Less":`Show All ${sessions.length}`}</button></div>}
+            {sessions.length>14&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllSess(!showAllSess)}>{showAllSess?"Show Less":`Show All ${sessions.length}`}</button></div>}
           </div>
         </>
       )}
-      {sessions.length===0&&<div style={{textAlign:"center",padding:"40px 0",color:C.textMute}}><div style={{fontSize:40,marginBottom:10}}>🏃</div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:700,color:C.lineStrong,marginBottom:6}}>No cardio logged yet</div><div style={{fontSize:13}}>Log your first cardio session above.</div></div>}
+      {sessions.length===0&&<div style={{textAlign:"center",padding:"40px 0",color:C.textMute}}><div style={{fontSize:40,marginBottom:10}}>🏃</div><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:18,fontWeight:700,color:C.lineStrong,marginBottom:6}}>No cardio logged yet</div><div style={{fontSize:13}}>Log your first cardio session above.</div></div>}
     </div>
   );
 }
@@ -3446,20 +3487,20 @@ function RunningTab({data,onSave,cardioData,onSaveCardio}){
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:6}}>RUN TRAINER</div>
+      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:6}}>RUN TRAINER</div>
       <div style={{fontSize:12,color:C.textMute,marginBottom:16}}>Guided run/walk programmes with voice prompts. For best results when your screen locks, keep music playing.</div>
 
       {/* Programme selector */}
       <div style={{marginBottom:16}}>
         <SectionHead label="Choose Programme"/>
         {Object.values(RUN_PROGRAMMES).map(p=>(
-          <div key={p.id} onClick={()=>selectProgramme(p.id)} style={{...card,padding:"14px",marginBottom:8,cursor:"pointer",border:progId===p.id?"1px solid #e8621a":"1px solid #e4ded4",background:progId===p.id?C.orangeBg:C.surface}}>
+          <div key={p.id} onClick={()=>selectProgramme(p.id)} style={{...card,padding:"14px",marginBottom:8,cursor:"pointer",border:progId===p.id?"1px solid rgba(255,122,46,0.55)":"1px solid rgba(255,255,255,0.10)",background:progId===p.id?C.orangeBg:C.surface}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{flex:1}}>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:18,color:progId===p.id?C.orange:C.text}}>{p.name}</div>
+                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:18,color:progId===p.id?C.orange:C.text}}>{p.name}</div>
                 <div style={{fontSize:12,color:C.textMute,marginTop:2}}>{p.desc}</div>
               </div>
-              {progId===p.id&&<div style={{fontSize:11,fontWeight:700,color:C.orange,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5}}>ACTIVE</div>}
+              {progId===p.id&&<div style={{fontSize:11,fontWeight:700,color:C.orange,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:0.5}}>ACTIVE</div>}
             </div>
           </div>
         ))}
@@ -3475,9 +3516,9 @@ function RunningTab({data,onSave,cardioData,onSaveCardio}){
           {builtWeeks.map((week,wi)=>{
             const weekDone=week.every((_,ri)=>completed[`${wi}-${ri}`]);
             return(
-              <div key={wi} style={{...card,padding:"12px 14px",marginBottom:10,border:weekDone?"1px solid #dff0e4":"1px solid #e4ded4"}}>
+              <div key={wi} style={{...card,padding:"12px 14px",marginBottom:10,border:weekDone?"1px solid rgba(48,209,88,0.28)":"1px solid rgba(255,255,255,0.10)"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                  <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:16,color:C.text}}>Week {wi+1}{weekDone&&<span style={{color:C.green,marginLeft:8,fontSize:13}}>✓</span>}</div>
+                  <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:16,color:C.text}}>Week {wi+1}{weekDone&&<span style={{color:C.green,marginLeft:8,fontSize:13}}>✓</span>}</div>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {week.map((run,ri)=>{
@@ -3633,7 +3674,7 @@ function GuidedRun({run,weekIdx,runIdx,onFinish,onExit}){
       {/* Top bar */}
       <div style={{padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <button onClick={()=>{window.speechSynthesis?.cancel();stopKeepalive();onExit();}} style={{background:"rgba(0,0,0,0.25)",border:"none",borderRadius:8,padding:"8px 12px",color:"white",fontSize:13,fontWeight:600,cursor:"pointer"}}>← Exit</button>
-        <div style={{color:"rgba(255,255,255,0.9)",fontSize:13,fontWeight:700,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>WEEK {weekIdx+1} · RUN {runIdx+1}</div>
+        <div style={{color:"rgba(255,255,255,0.9)",fontSize:13,fontWeight:700,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:1}}>WEEK {weekIdx+1} · RUN {runIdx+1}</div>
         <div style={{width:60}}/>
       </div>
 
@@ -3644,14 +3685,14 @@ function GuidedRun({run,weekIdx,runIdx,onFinish,onExit}){
             {!started?(
               <>
                 <div style={{fontSize:60,marginBottom:20}}>🏃</div>
-                <div style={{color:"white",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:28,textAlign:"center",marginBottom:8}}>READY?</div>
+                <div style={{color:"white",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:28,textAlign:"center",marginBottom:8}}>READY?</div>
                 <div style={{color:"rgba(255,255,255,0.85)",fontSize:14,textAlign:"center",marginBottom:30,maxWidth:280}}>{summariseRun(run)}. Voice prompts will guide you through each interval.</div>
-                <button onClick={begin} style={{background:"white",border:"none",borderRadius:30,padding:"16px 50px",fontSize:18,fontWeight:800,color:C.text,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>START</button>
+                <button onClick={begin} style={{background:"white",border:"none",borderRadius:30,padding:"16px 50px",fontSize:18,fontWeight:800,color:C.text,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:1}}>START</button>
               </>
             ):(
               <>
-                <div style={{color:"rgba(255,255,255,0.85)",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:22,letterSpacing:3,marginBottom:10}}>{label(block.type)}</div>
-                <div style={{color:"white",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:96,lineHeight:1,letterSpacing:2}}>{fmtMS(secsLeft)}</div>
+                <div style={{color:"rgba(255,255,255,0.85)",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:22,letterSpacing:3,marginBottom:10}}>{label(block.type)}</div>
+                <div style={{color:"white",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:96,lineHeight:1,letterSpacing:2}}>{fmtMS(secsLeft)}</div>
                 {nextBlock&&<div style={{color:"rgba(255,255,255,0.7)",fontSize:14,marginTop:20}}>Next: {label(nextBlock.type)} for {fmtMS(nextBlock.secs)}</div>}
                 {!nextBlock&&<div style={{color:"rgba(255,255,255,0.7)",fontSize:14,marginTop:20}}>Final block — nearly there!</div>}
                 {paused&&<div style={{color:"white",fontSize:16,fontWeight:700,marginTop:16,padding:"4px 16px",background:"rgba(0,0,0,0.25)",borderRadius:20}}>PAUSED</div>}
@@ -3670,8 +3711,8 @@ function GuidedRun({run,weekIdx,runIdx,onFinish,onExit}){
                 <span style={{fontSize:11,color:"rgba(255,255,255,0.7)"}}>{overallPct}% · {fmtMS(totalSecs)} total</span>
               </div>
               <div style={{display:"flex",gap:10}}>
-                <button onClick={togglePause} style={{flex:2,background:"white",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,color:C.text,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>{paused?"RESUME":"PAUSE"}</button>
-                <button onClick={skipBlock} style={{flex:1,background:"rgba(0,0,0,0.25)",border:"none",borderRadius:12,padding:"15px",fontSize:14,fontWeight:700,color:"white",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>SKIP</button>
+                <button onClick={togglePause} style={{flex:2,background:"white",border:"none",borderRadius:12,padding:"15px",fontSize:16,fontWeight:800,color:C.text,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:1}}>{paused?"RESUME":"PAUSE"}</button>
+                <button onClick={skipBlock} style={{flex:1,background:"rgba(0,0,0,0.25)",border:"none",borderRadius:12,padding:"15px",fontSize:14,fontWeight:700,color:"white",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:1}}>SKIP</button>
               </div>
             </div>
           )}
@@ -3681,10 +3722,10 @@ function GuidedRun({run,weekIdx,runIdx,onFinish,onExit}){
       {done&&(
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{fontSize:64,marginBottom:16}}>🎉</div>
-          <div style={{color:"white",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:30,marginBottom:8}}>RUN COMPLETE</div>
+          <div style={{color:"white",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:30,marginBottom:8}}>RUN COMPLETE</div>
           <div style={{color:"rgba(255,255,255,0.85)",fontSize:15,textAlign:"center",marginBottom:8}}>Week {weekIdx+1}, Run {runIdx+1} done.</div>
           <div style={{color:"rgba(255,255,255,0.7)",fontSize:13,textAlign:"center",marginBottom:30}}>{Math.round(totalSecs/60)} minutes logged to your cardio.</div>
-          <button onClick={onFinish} style={{background:"white",border:"none",borderRadius:30,padding:"16px 50px",fontSize:18,fontWeight:800,color:C.greenBg,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>DONE</button>
+          <button onClick={onFinish} style={{background:"white",border:"none",borderRadius:30,padding:"16px 50px",fontSize:18,fontWeight:800,color:C.greenBg,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:1}}>DONE</button>
         </div>
       )}
     </div>
