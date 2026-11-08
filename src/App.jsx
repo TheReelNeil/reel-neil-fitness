@@ -179,13 +179,19 @@ const setInp={background:C.field,border:"1px solid transparent",borderRadius:21,
 const card={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:24,marginBottom:12,overflow:"hidden",boxShadow:C.glassHi,backdropFilter:"blur(22px) saturate(170%)",WebkitBackdropFilter:"blur(22px) saturate(170%)"};
 const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"11px 18px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,letterSpacing:0,minHeight:44,
   ...(v==="primary"?{background:C.orange,color:C.ink,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.4)"}:v==="ghost"?{background:C.field,color:C.text,border:`1px solid ${C.line}`}:v==="danger"?{background:C.redBg,color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
-const lbl={fontSize:12,fontWeight:600,letterSpacing:0.4,textTransform:"uppercase",color:C.textMute,display:"block",marginBottom:6};
+const lbl={fontSize:13,fontWeight:600,color:C.textMute,display:"block",marginBottom:6};
+const h1={fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:30,letterSpacing:-1,lineHeight:1.15,color:C.text};
+const pillS=(on,col=C.orange)=>({flexShrink:0,height:34,padding:"0 14px",borderRadius:999,border:`1px solid ${on?col+"88":"rgba(255,255,255,0.10)"}`,background:on?col+"26":"rgba(255,255,255,0.06)",color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:on?700:600,cursor:"pointer",whiteSpace:"nowrap"});
+const segWrap={display:"flex",gap:4,padding:4,borderRadius:999,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)"};
+const segBtn=on=>({flex:1,height:36,borderRadius:999,border:"none",background:on?"rgba(255,255,255,0.16)":"transparent",color:on?C.text:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:14,fontWeight:on?700:600,cursor:"pointer",boxShadow:on?"inset 0 1px 0 rgba(255,255,255,0.18)":"none",whiteSpace:"nowrap",padding:"0 6px"});
+const tgl=(on,col=C.orange)=>({flex:1,minHeight:44,padding:"8px 6px",borderRadius:16,border:`1px solid ${on?col+"88":C.line}`,background:on?col+"26":C.field,color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",lineHeight:1.2});
+const chip={fontSize:12,fontWeight:600,background:"rgba(255,255,255,0.08)",borderRadius:12,padding:"5px 10px",color:C.text};
 const statBox=(color=C.orange)=>({background:C.glass,border:`1px solid ${color}33`,borderRadius:20,padding:"14px 16px",flex:1,boxShadow:C.glassHi});
 
 function MuscleChip({muscle}){return <span style={{fontSize:11,background:(MC[muscle]||C.textMute)+"22",color:MC[muscle]||C.textMute,padding:"3px 9px",borderRadius:10,fontWeight:600,letterSpacing:0.2}}>{muscle}</span>;}
-function MuscleFilter({active,onChange}){return(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>{["All",...MUSCLES].map(m=><button key={m} onClick={()=>onChange(m)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",textTransform:"uppercase",background:active===m?(MC[m]||C.orange):"transparent",color:active===m?C.onDark:C.textMute,borderColor:active===m?(MC[m]||C.orange):C.line}}>{m}</button>)}</div>);}
+function MuscleFilter({active,onChange}){return(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>{["All",...MUSCLES].map(m=><button key={m} onClick={()=>onChange(m)} style={pillS(active===m,MC[m]||C.orange)}>{m}</button>)}</div>);}
 function Divider(){return <div style={{height:1,background:C.line,margin:"4px 0"}}/>;}
-function SectionHead({label}){return <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:11,letterSpacing:1.5,color:C.textMute,textTransform:"uppercase",marginBottom:10,marginTop:4}}>{label}</div>;}
+function SectionHead({label}){return <div style={{fontWeight:700,fontSize:16,letterSpacing:-0.2,color:C.text,marginBottom:10,marginTop:2}}>{label}</div>;}
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App(){
@@ -272,7 +278,7 @@ function AuthScreen({onAuth}){
           </a>
         </div>
         <div style={{display:"flex",background:C.surface,border:"1px solid rgba(255,255,255,0.10)",borderRadius:8,marginBottom:22,padding:3}}>
-          {["login","register"].map(m=><button key={m} onClick={()=>{setMode(m);setError("");}} style={{flex:1,padding:"9px",border:"none",borderRadius:6,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:mode===m?C.orange:"transparent",color:mode===m?C.text:C.textMute}}>{m==="login"?"Sign In":"Register"}</button>)}
+          {["login","register"].map(m=><button key={m} onClick={()=>{setMode(m);setError("");}} style={segBtn(mode===m)}>{m==="login"?"Sign in":"Register"}</button>)}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <div><label style={lbl}>Email</label><input style={inp} type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
@@ -598,7 +604,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
   if(editing||!profile)return(
     <div style={{padding:"14px 14px 32px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5}}>CALORIE CALCULATOR</div>
+        <div style={h1}>Calories</div>
         {profile&&<button style={{...btn("ghost"),padding:"6px 10px"}} onClick={()=>setEditing(false)}>Cancel</button>}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -606,7 +612,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
           <div style={{flex:1}}><label style={lbl}>Age</label><input style={inp} type="number" inputMode="numeric" placeholder="e.g. 30" value={form.age} onChange={e=>f("age",e.target.value)}/></div>
           <div style={{flex:1}}><label style={lbl}>Gender</label>
             <div style={{display:"flex",gap:6}}>
-              {["male","female"].map(g=><button key={g} onClick={()=>f("gender",g)} style={{flex:1,padding:"10px",border:"1px solid",borderRadius:7,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,textTransform:"uppercase",background:form.gender===g?C.orange:C.field,color:form.gender===g?C.text:C.textMute,borderColor:form.gender===g?C.orange:C.lineStrong}}>{g}</button>)}
+              {["male","female"].map(g=><button key={g} onClick={()=>f("gender",g)} style={tgl(form.gender===g)}>{g==="male"?"Male":"Female"}</button>)}
             </div>
           </div>
         </div>
@@ -651,7 +657,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
   return(
     <div style={{padding:"14px 14px 32px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5}}>CALORIE CALCULATOR</div>
+        <div style={h1}>Calories</div>
         <button style={{...btn("ghost"),padding:"6px 10px",fontSize:12}} onClick={()=>setEditing(true)}>{Ic.edit} Edit</button>
       </div>
       <div style={{fontSize:11,color:C.textMute,marginBottom:20}}>{profile.age}yr · {profile.gender} · {profile.height}cm · {profile.weight}kg · {act.label}</div>
@@ -676,7 +682,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
 
       {/* Macros */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-        <SectionHead label="Daily Macros"/>
+        <SectionHead label="Daily macros"/>
         {macros&&JSON.stringify(macros)!==JSON.stringify(base)&&(
           <button onClick={resetMacros} style={{fontSize:11,color:C.orange,fontWeight:700,background:"none",border:"none",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:0.5,textTransform:"uppercase",paddingBottom:10}}>↺ Reset</button>
         )}
@@ -724,7 +730,7 @@ function CaloriesTab({profile,onSave,customMacros,onSaveMacros}){
 
       <div style={{...card,padding:14,background:C.surface}}>
         <div style={{fontSize:12,color:C.textMute,lineHeight:1.7}}>
-          These figures are calculated using the <span style={{color:C.textMute}}>Mifflin-St Jeor</span> equation and are a starting point — adjust based on how your body responds over 2–3 weeks. Weigh yourself daily and track averages in the Weight tab.
+          These figures are calculated using the <span style={{color:C.textMute}}>Mifflin-St Jeor</span> equation and are a starting point, so adjust based on how your body responds over 2–3 weeks. Weigh yourself daily and track averages in the Weight tab.
         </div>
       </div>
     </div>
@@ -803,7 +809,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       {syncFld&&syncNote(syncFld)}
     </div>);
   const tog=(label,k,color)=>(
-    <button key={k} onClick={()=>setForm(p=>({...p,[k]:!p[k]}))} style={{flex:1,padding:"10px 4px",borderRadius:7,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:form[k]?(color||C.orange):C.field,color:form[k]?"white":C.textMute,borderColor:form[k]?(color||C.orange):C.line}}>{label}</button>);
+    <button key={k} onClick={()=>setForm(p=>({...p,[k]:!p[k]}))} style={tgl(!!form[k],color||C.orange)}>{label}</button>);
 
   const save=()=>{
     const e={kcal:macroKcal,protein:numOrNull(form.protein),carbs:numOrNull(form.carbs),fat:numOrNull(form.fat),cardioKcals:numOrNull(form.cardioKcals),fluids:numOrNull(form.fluids),sleepHrs:numOrNull(form.sleepHrs),hrv:numOrNull(form.hrv),rhr:numOrNull(form.rhr),trained:form.trained,offPlan:form.offPlan,alcohol:form.alcohol,refeed:form.refeed,notes:form.notes||"",
@@ -888,12 +894,12 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:12}}>DAILY CHECK-IN</div>
+      <div style={{...h1,marginBottom:14}}>Daily check-in</div>
 
       {/* View switcher — keeps the daily log short and focused */}
-      <div style={{display:"flex",gap:6,marginBottom:14}}>
+      <div style={{...segWrap,marginBottom:16}}>
         {[["log","Log"],["trends","Trends"],["history","History"],["settings","Setup"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"9px 4px",borderRadius:7,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:view===k?C.text:C.field,color:view===k?C.onDark:C.textMute,borderColor:view===k?C.text:C.line}}>{l}</button>
+          <button key={k} onClick={()=>setView(k)} style={segBtn(view===k)}>{l}</button>
         ))}
       </div>
 
@@ -961,7 +967,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
           {numField("Weight (kg)","weight","e.g. 85.4","0.1","weight")}
           {numField("Sleep (hrs)","sleepHrs","e.g. 7.5","0.1","sleepHrs")}
         </div>
-        <button style={{...btn("secondary"),width:"100%",justifyContent:"center",padding:"10px",background:saved?C.greenBg:C.field,color:saved?C.green:C.text}} onClick={save}>{saved?<>{Ic.check} Saved!</>:<>{Ic.check} Save Morning Entry</>}</button>
+        <button style={{...btn("secondary"),width:"100%",justifyContent:"center",padding:"10px",background:saved?C.greenBg:C.field,color:saved?C.green:C.text}} onClick={save}>{saved?<>{Ic.check} Saved!</>:<>{Ic.check} Save morning entry</>}</button>
       </div>
 
       {/* ── EVENING ── */}
@@ -971,7 +977,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       </div>
       {/* Nutrition */}
       <div style={{...card,padding:14,marginBottom:12}}>
-        <SectionHead label="Nutrition — from MyFitnessPal at the end of the day"/>
+        <SectionHead label="Nutrition, from MyFitnessPal at the end of the day"/>
         <div style={{display:"flex",gap:8,marginBottom:10}}>
           {numField("Protein (g)","protein","g")}
           {numField("Carbs (g)","carbs","g")}
@@ -1018,11 +1024,11 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
 
       {/* Day flags */}
       <div style={{...card,padding:14,marginBottom:12}}>
-        <SectionHead label="Day Flags"/>
+        <SectionHead label="Day flags"/>
         <div style={{display:"flex",gap:6,marginBottom:prefs?.cycleTracking?10:0}}>
           {tog("Trained","trained",C.green)}
           {tog("Refeed","refeed",C.gold)}
-          {tog("Off-Plan Meal","offPlan",C.red)}
+          {tog("Off-plan meal","offPlan",C.red)}
           {tog("Alcohol","alcohol",C.red)}
         </div>
         {prefs?.cycleTracking&&(
@@ -1039,15 +1045,15 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       {/* Notes + save */}
       <div style={{...card,padding:14,marginBottom:12}}>
         <SectionHead label="Notes"/>
-        <textarea style={{...inp,minHeight:64,resize:"vertical",fontFamily:"'Inter',system-ui,sans-serif"}} placeholder="Anything worth noting — energy, hunger, training quality…" value={form.notes} onChange={e=>f("notes",e.target.value)}/>
+        <textarea style={{...inp,minHeight:64,resize:"vertical",fontFamily:"'Inter',system-ui,sans-serif"}} placeholder="Anything worth noting: energy, hunger, training quality…" value={form.notes} onChange={e=>f("notes",e.target.value)}/>
       </div>
-      <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"14px",marginBottom:12,background:saved?C.green:C.text}} onClick={save}>{saved?<>{Ic.check} Saved!</>:<>{Ic.check} Save Check-in — {fmtDate(date)}</>}</button>
+      <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"14px",marginBottom:12,background:saved?C.green:C.text}} onClick={save}>{saved?<>{Ic.check} Saved!</>:<>{Ic.check} Save check-in for {fmtDate(date)}</>}</button>
 
       {/* Weekly check-in: measurements + BP */}
       <div style={{...card,padding:14,marginBottom:12,border:isSunday?`1px solid ${C.orange}66`:`1px solid ${C.line}`}}>
         <button onClick={()=>setShowWeekly(s=>!s)} style={{width:"100%",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",padding:0}}>
           <div style={{textAlign:"left"}}>
-            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:isSunday?C.orange:C.textMute,textTransform:"uppercase"}}>📏 Weekly Check-in {isSunday?"— it's Sunday!":""}</div>
+            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:isSunday?C.orange:C.textMute,textTransform:"uppercase"}}>📏 Weekly check-in{isSunday?", it's Sunday!":""}</div>
             <div style={{fontSize:11,color:C.textMute,marginTop:2}}>{latestM?`Last done ${fmtDate(latestM.date)}`:"Measurements & BP — once a week"}</div>
           </div>
           <span style={{color:C.textMute,fontSize:12}}>{showWeekly?"▲":"▼"}</span>
@@ -1064,7 +1070,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
               <label style={lbl}>Blood Pressure</label>
               <input style={inp} type="text" inputMode="numeric" placeholder="e.g. 120/80" value={mForm.bp} onChange={e=>setMForm(p=>({...p,bp:e.target.value}))}/>
             </div>
-            <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"11px"}} onClick={saveWeekly}>{Ic.check} Save Weekly Check-in</button>
+            <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"11px"}} onClick={saveWeekly}>{Ic.check} Save weekly check-in</button>
           </div>
         )}
       </div>
@@ -1078,7 +1084,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
           <SectionHead label="Trends"/>
           <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:6,marginBottom:8}}>
             {METRICS.map(([k,l,,c])=>(
-              <button key={k} onClick={()=>setMetric(k)} style={{flexShrink:0,padding:"5px 10px",borderRadius:5,border:"1px solid",fontSize:11,fontWeight:700,letterSpacing:0.5,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",textTransform:"uppercase",background:metric===k?c:"transparent",color:metric===k?"white":C.textMute,borderColor:metric===k?c:C.line}}>{l}</button>
+              <button key={k} onClick={()=>setMetric(k)} style={pillS(metric===k,c)}>{l}</button>
             ))}
           </div>
           {wAvgs.length>1?(
@@ -1137,7 +1143,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
       {/* History */}
       {histDates.length>0&&(
         <div style={{marginBottom:12}}>
-          <SectionHead label={`Check-in History (${histDates.length})`}/>
+          <SectionHead label={`Check-in history (${histDates.length})`}/>
           <div style={card}>
             {displayedHist.map((d,i)=>{
               const e=dailyLog[d]||{};
@@ -1157,7 +1163,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
                 </div>
               );
             })}
-            {histDates.length>10&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllHist(!showAllHist)}>{showAllHist?"Show Less":`Show All ${histDates.length}`}</button></div>}
+            {histDates.length>10&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllHist(!showAllHist)}>{showAllHist?"Show Less":`Show all ${histDates.length}`}</button></div>}
           </div>
         </div>
       )}
@@ -1318,14 +1324,14 @@ function PicsTab({token,userId,pics,onSavePics}){
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:4}}>PROGRESS PICS</div>
-      <div style={{fontSize:12,color:C.textMute,marginBottom:14}}>📸 Once a week — same day, same spot, same lighting gives the best comparisons.</div>
+      <div style={{...h1,marginBottom:4}}>Progress pics</div>
+      <div style={{fontSize:12,color:C.textMute,marginBottom:14}}>📸 Once a week. Same day, same spot and same lighting gives the best comparisons.</div>
 
       <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFile}/>
 
       {/* This week's photos */}
       <div style={{...card,padding:14,marginBottom:14}}>
-        <SectionHead label="This Week's Photos"/>
+        <SectionHead label="This week's photos"/>
         <div style={{marginBottom:10}}>
           <label style={lbl}>Date</label>
           <input style={{...inp,WebkitAppearance:"none",appearance:"none",lineHeight:"normal"}} type="date" value={date} onChange={e=>e.target.value&&setDate(e.target.value)}/>
@@ -1396,14 +1402,14 @@ function PicsTab({token,userId,pics,onSavePics}){
               </select>
             </div>
           </div>
-          <div style={{display:"flex",gap:6,marginBottom:10}}>
+          <div style={{...segWrap,marginBottom:10}}>
             {POSES.map(([key,label])=>(
-              <button key={key} onClick={()=>setCmpPose(key)} style={{flex:1,padding:"7px 4px",borderRadius:6,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:cmpPose===key?C.orange:C.field,color:cmpPose===key?"white":C.textMute,borderColor:cmpPose===key?C.orange:C.line}}>{label}</button>
+              <button key={key} onClick={()=>setCmpPose(key)} style={segBtn(cmpPose===key)}>{label}</button>
             ))}
           </div>
-          <div style={{display:"flex",gap:6,marginBottom:12}}>
-            {[["side","Side by Side"],["overlay","Overlay Slider"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setCmpMode(k)} style={{flex:1,padding:"8px 4px",borderRadius:6,border:"1px solid",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:12,letterSpacing:0.5,textTransform:"uppercase",background:cmpMode===k?C.text:C.field,color:cmpMode===k?C.onDark:C.textMute,borderColor:cmpMode===k?C.text:C.line}}>{l}</button>
+          <div style={{...segWrap,marginBottom:12}}>
+            {[["side","Side by side"],["overlay","Overlay slider"]].map(([k,l])=>(
+              <button key={k} onClick={()=>setCmpMode(k)} style={segBtn(cmpMode===k)}>{l}</button>
             ))}
           </div>
 
@@ -1499,26 +1505,26 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
     const weekData={...(logs[planId]?.[week]||{}),[dayIdx]:{_skipped:true}};
     onSaveLogs({...logs,[planId]:{...(logs[planId]||{}),[week]:weekData}});
   };
-  if(!activePlan)return(<div style={{padding:32,textAlign:"center"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,color:C.textFaint,marginBottom:12}}>NO ACTIVE PLAN</div><div style={{color:C.textMute,marginBottom:24,fontSize:14}}>Create or activate a training plan to get started.</div><button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={onSelectPlan}>{Ic.plus} Create a Plan</button></div>);
+  if(!activePlan)return(<div style={{padding:32,textAlign:"center"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,color:C.textFaint,marginBottom:12}}>No active plan</div><div style={{color:C.textMute,marginBottom:24,fontSize:14}}>Create or activate a training plan to get started.</div><button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={onSelectPlan}>{Ic.plus} Create a Plan</button></div>);
   const focus=["Set Load","Beat Load","Increase Volume","Increase Volume","Increase Volume","DELOAD","Beat Week 1","Beat Week 2","Beat Week 3","Beat Week 4","Beat Week 5","DELOAD"][currentWeek-1]||"";
   return(<div style={{padding:"14px 14px 24px"}}>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-      <button style={{...btn("ghost"),padding:"8px 12px"}} disabled={currentWeek<=1} onClick={()=>onWeekChange(currentWeek-1)}>‹</button>
+      <button aria-label="Previous week" style={{...btn("ghost"),padding:0,width:44,justifyContent:"center",fontSize:22,opacity:currentWeek<=1?0.35:1}} disabled={currentWeek<=1} onClick={()=>onWeekChange(currentWeek-1)}>‹</button>
       <div style={{flex:1,textAlign:"center"}}>
-        <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:28,color:C.text}}>WEEK {currentWeek}</div>
-        {focus&&<div style={{fontSize:11,color:C.orange,fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>{focus}</div>}
+        <div style={h1}>Week {currentWeek}</div>
+        {focus&&<div style={{fontSize:12,color:C.orange,fontWeight:700,letterSpacing:0.7,textTransform:"uppercase",marginTop:2}}>{focus}</div>}
       </div>
-      <button style={{...btn("ghost"),padding:"8px 12px"}} disabled={currentWeek>=activePlan.weeks} onClick={()=>onWeekChange(currentWeek+1)}>›</button>
+      <button aria-label="Next week" style={{...btn("ghost"),padding:0,width:44,justifyContent:"center",fontSize:22,opacity:currentWeek>=activePlan.weeks?0.35:1}} disabled={currentWeek>=activePlan.weeks} onClick={()=>onWeekChange(currentWeek+1)}>›</button>
     </div>
     {activePlan.days.map((day,i)=>{
       const dayLog=logs?.[activePlan.id]?.[currentWeek]?.[i];
       const vol=dayLog&&!dayLog._skipped?Object.values(dayLog).filter(Array.isArray).reduce((s,sets)=>s+sets.reduce((a,st)=>a+(st.weight*st.reps||0),0),0):0;
       return(<div key={i} style={{...card,border:dayLog?"1px solid rgba(48,209,88,0.28)":"1px solid rgba(255,255,255,0.10)"}}>
-        <div style={{padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{padding:"16px 16px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"flex-start",gap:8,flex:1}}>
             <div>
-              <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:1,textTransform:"uppercase",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif"}}>Day {i+1}</div>
-              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:20,color:C.text,marginTop:2}}>{day.name}</div>
+              <div style={{fontSize:12,color:C.textMute,fontWeight:600}}>Day {i+1}</div>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,letterSpacing:-0.5,color:C.text,marginTop:1}}>{day.name}</div>
               <div style={{fontSize:12,color:C.textMute,marginTop:2}}>{day.exercises.length} exercises{dayLog&&<span style={{color:C.orange,marginLeft:8}}>· {Math.round(vol).toLocaleString()} kg vol</span>}</div>
               {logs?.[activePlan.id]?.[currentWeek]?.[`${i}_notes`]&&<div style={{fontSize:11,color:C.textMute,marginTop:3,fontStyle:"italic"}}>"{logs[activePlan.id][currentWeek][`${i}_notes`].slice(0,60)}{logs[activePlan.id][currentWeek][`${i}_notes`].length>60?"…":""}"</div>}
             </div>
@@ -1526,21 +1532,21 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
           <div style={{display:"flex",gap:6,flexShrink:0}}>
             {dayLog?._skipped?(
               <>
-                <div style={{padding:"10px 12px",borderRadius:7,background:C.field,border:"1px solid rgba(255,255,255,0.18)",fontSize:12,fontWeight:700,color:C.textMute,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:0.5}}>SKIPPED</div>
+                <div style={{padding:"0 14px",height:44,display:"flex",alignItems:"center",borderRadius:999,background:C.field,fontSize:13,fontWeight:700,color:C.textMute}}>Skipped</div>
                 <button style={{...btn("danger"),padding:"10px 10px"}} onClick={()=>resetSession(activePlan.id,currentWeek,i)} title="Reset">{Ic.trash}</button>
               </>
             ):(
               <>
                 <button style={{...btn(dayLog?"ghost":"primary"),padding:"10px 16px"}} onClick={()=>onStartSession(i)}>{dayLog?"View":"Start"}</button>
-                {!dayLog&&<button style={{...btn("ghost"),padding:"10px 12px",fontSize:11,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,letterSpacing:0.5,color:C.textMute}} onClick={()=>skipSession(activePlan.id,currentWeek,i)}>Skip</button>}
+                {!dayLog&&<button style={{...btn("ghost"),color:C.textMute}} onClick={()=>skipSession(activePlan.id,currentWeek,i)}>Skip</button>}
                 {dayLog&&<button style={{...btn("danger"),padding:"10px 10px"}} onClick={()=>resetSession(activePlan.id,currentWeek,i)} title="Reset">{Ic.trash}</button>}
               </>
             )}
           </div>
         </div>
-        <div style={{padding:"0 14px 12px",display:"flex",flexWrap:"wrap",gap:5}}>
-          {day.exercises.slice(0,6).map(ex=>{const e=exMap[ex.exerciseId];return e?<span key={ex.exerciseId} style={{fontSize:11,background:C.field,border:"1px solid rgba(255,255,255,0.10)",borderRadius:4,padding:"3px 7px",color:C.textMute}}>{e.name}</span>:null;})}
-          {day.exercises.length>6&&<span style={{fontSize:11,color:C.textMute,padding:"3px 4px"}}>+{day.exercises.length-6} more</span>}
+        <div style={{padding:"0 16px 16px",display:"flex",flexWrap:"wrap",gap:6}}>
+          {day.exercises.slice(0,6).map(ex=>{const e=exMap[ex.exerciseId];return e?<span key={ex.exerciseId} style={chip}>{e.name}</span>:null;})}
+          {day.exercises.length>6&&<span style={{fontSize:12,fontWeight:600,color:C.textMute,padding:"5px 4px"}}>+{day.exercises.length-6} more</span>}
         </div>
       </div>);
     })}
@@ -2238,27 +2244,28 @@ function PlansTab({plans,exercises,activePlanId,exMap,onActivate,onSavePlans}){
   if(editing!==null){const p=editing==="new"?{id:`p${Date.now()}`,name:"",weeks:12,days:[]}:plans.find(p=>p.id===editing);return (<PlanBuilder plan={p} exercises={exercises} exMap={exMap} onSave={p=>{onSavePlans(prev=>{const exists=prev.find(x=>x.id===p.id);return exists?prev.map(x=>x.id===p.id?p:x):[...prev,p];});setEditing(null);}} onCancel={()=>setEditing(null)}/>);}
   if(aiBuilding){return (<AIPlanBuilder exercises={exercises} exMap={exMap} onSave={p=>{onSavePlans(prev=>[...prev,{...p,id:`p${Date.now()}`}]);setAiBuilding(false);}} onCancel={()=>setAiBuilding(false)}/>);}
   return(<div style={{padding:"14px 14px 24px"}}>
+    <div style={{...h1,marginBottom:14}}>Plans</div>
     <div style={{display:"flex",gap:8,marginBottom:16}}>
-      <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>setEditing("new")}>{Ic.plus} New Plan</button>
-      <button style={{flex:1,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px 16px",borderRadius:7,border:"1px solid rgba(100,210,255,0.5)",cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:0.5,textTransform:"uppercase",background:C.orangeBg,color:C.orange}} onClick={()=>setAiBuilding(true)}>{"✨"} AI Builder</button>
+      <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>setEditing("new")}>{Ic.plus} New plan</button>
+      <button style={{...btn("ghost"),flex:1,justifyContent:"center",color:C.blue,border:"1px solid rgba(100,210,255,0.35)",background:C.blueBg}} onClick={()=>setAiBuilding(true)}>{"✨"} AI builder</button>
     </div>
     {plans.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:C.textMute,fontSize:14}}>No plans yet.</div>}
     {plans.map(p=>(<div key={p.id} style={{...card,border:p.id===activePlanId?"1px solid rgba(48,209,88,0.5)":"1px solid rgba(255,255,255,0.10)"}}>
-      <div style={{padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div>{p.id===activePlanId&&<div style={{fontSize:10,color:C.orange,fontWeight:700,letterSpacing:1,marginBottom:3}}>✓ ACTIVE</div>}
-          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:20,color:C.text}}>{p.name||"Unnamed Plan"}</div>
+      <div style={{padding:"16px 16px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+        <div style={{minWidth:0}}>{p.id===activePlanId&&<div style={{display:"inline-flex",fontSize:12,color:C.green,fontWeight:700,background:C.greenBg,padding:"3px 10px",borderRadius:999,marginBottom:6}}>✓ Active</div>}
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,letterSpacing:-0.5,color:C.text}}>{p.name||"Unnamed plan"}</div>
           <div style={{fontSize:12,color:C.textMute,marginTop:2}}>{p.days.length} days · {p.weeks} weeks</div>
         </div>
         <div style={{display:"flex",gap:6}}>
-          <button style={{...btn("ghost"),padding:"7px 10px"}} onClick={()=>setEditing(p.id)}>{Ic.edit}</button>
-          {p.id!==activePlanId&&<button style={{...btn("primary"),padding:"7px 12px",fontSize:12}} onClick={()=>onActivate(p.id)}>Activate</button>}
-          <button style={{...btn("danger"),padding:"7px 10px"}} onClick={()=>{if(window.confirm(`Delete "${p.name||"this plan"}"? This cannot be undone.`))onSavePlans(prev=>prev.filter(x=>x.id!==p.id));}}>{Ic.trash}</button>
+          <button aria-label="Edit plan" style={{...btn("ghost"),padding:0,width:44,justifyContent:"center"}} onClick={()=>setEditing(p.id)}>{Ic.edit}</button>
+          {p.id!==activePlanId&&<button style={{...btn("primary"),padding:"0 14px"}} onClick={()=>onActivate(p.id)}>Activate</button>}
+          <button aria-label="Delete plan" style={{...btn("danger"),padding:0,width:44,justifyContent:"center"}} onClick={()=>{if(window.confirm(`Delete "${p.name||"this plan"}"? This cannot be undone.`))onSavePlans(prev=>prev.filter(x=>x.id!==p.id));}}>{Ic.trash}</button>
         </div>
       </div>
-      <div style={{padding:"0 14px 12px",display:"flex",flexWrap:"wrap",gap:5}}>
-        {p.days.map((d,i)=><span key={i} style={{fontSize:11,background:C.field,border:"1px solid rgba(255,255,255,0.10)",borderRadius:4,padding:"3px 7px",color:C.textMute}}>{d.name}</span>)}
+      <div style={{padding:"0 16px 12px",display:"flex",flexWrap:"wrap",gap:6}}>
+        {p.days.map((d,i)=><span key={i} style={chip}>{d.name}</span>)}
       </div>
-      <div style={{padding:"0 14px 14px"}}>
+      <div style={{padding:"0 16px 16px"}}>
         <VolumeAnalysis plan={p} exMap={exMap}/>
       </div>
     </div>))}
@@ -2357,10 +2364,11 @@ function ExercisesTab({exercises,onSave}){
   const [newEx,setNewEx]=useState({name:"",muscle:"Chest"});
   const filtered=exercises.filter(e=>(muscle==="All"||e.muscle===muscle)&&e.name.toLowerCase().includes(search.toLowerCase()));
   return(<div style={{padding:"14px 14px 24px"}}>
+    <div style={{...h1,marginBottom:14}}>Exercises</div>
     <div style={{position:"relative",marginBottom:10}}><div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textMute}}>{Ic.search}</div><input style={{...inp,paddingLeft:34}} placeholder="Search exercises…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
     <MuscleFilter active={muscle} onChange={setMuscle}/>
     {adding&&(<div style={{...card,padding:14,marginBottom:12}}>
-      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,marginBottom:10,color:C.text}}>NEW EXERCISE</div>
+      <div style={{fontWeight:700,fontSize:16,marginBottom:10,color:C.text}}>New exercise</div>
       <input style={{...inp,marginBottom:8}} placeholder="Exercise name" value={newEx.name} onChange={e=>setNewEx(p=>({...p,name:e.target.value}))}/>
       <select style={{...inp,marginBottom:10}} value={newEx.muscle} onChange={e=>setNewEx(p=>({...p,muscle:e.target.value}))}>{MUSCLES.map(m=><option key={m} value={m}>{m}</option>)}</select>
       <div style={{display:"flex",gap:8}}>
@@ -2368,9 +2376,9 @@ function ExercisesTab({exercises,onSave}){
         <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>{if(!newEx.name.trim())return;onSave([...exercises,{id:`custom_${Date.now()}`,...newEx}]);setNewEx({name:"",muscle:"Chest"});setAdding(false);}}>{Ic.check} Add</button>
       </div>
     </div>)}
-    {!adding&&<button style={{...btn("ghost"),width:"100%",justifyContent:"center",marginBottom:12}} onClick={()=>setAdding(true)}>{Ic.plus} Add Custom Exercise</button>}
+    {!adding&&<button style={{...btn("ghost"),width:"100%",justifyContent:"center",marginBottom:12}} onClick={()=>setAdding(true)}>{Ic.plus} Add custom exercise</button>}
     <div style={card}>
-      {filtered.map((e,i)=>(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}><div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/></div>))}
+      {filtered.map((e,i)=>(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"0 16px",minHeight:50,borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}><div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/></div>))}
       {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:C.textMute,fontSize:13}}>No exercises found</div>}
     </div>
     <div style={{fontSize:11,color:C.textMute,textAlign:"center",marginTop:10}}>{exercises.length} exercises in library</div>
@@ -2386,16 +2394,17 @@ function PBsTab({pbs,exMap,onSavePbs}){
     onSavePbs(updated);
   };
   const entries=Object.entries(pbs).map(([id,pb])=>({id,...pb,ex:exMap[id]})).filter(e=>e.ex).sort((a,b)=>est1RM(b.weight,b.reps)-est1RM(a.weight,a.reps));
-  if(entries.length===0)return(<div style={{padding:32,textAlign:"center",color:C.textMute}}><div style={{fontSize:48,marginBottom:8}}>🏆</div><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:20,fontWeight:700,color:C.lineStrong,marginBottom:6}}>NO PBs YET</div><div style={{fontSize:13}}>Start logging sessions and your personal bests will appear here automatically.</div></div>);
+  if(entries.length===0)return(<div style={{padding:32,textAlign:"center",color:C.textMute}}><div style={{fontSize:48,marginBottom:8}}>🏆</div><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:20,fontWeight:700,color:C.lineStrong,marginBottom:6}}>No PBs yet</div><div style={{fontSize:13}}>Start logging sessions and your personal bests will appear here automatically.</div></div>);
   const byMuscle={};entries.forEach(e=>{const m=e.ex?.muscle||"Other";if(!byMuscle[m])byMuscle[m]=[];byMuscle[m].push(e);});
   return(<div style={{padding:"14px 14px 32px"}}>
-    <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:C.textMute,marginBottom:16,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif"}}>PERSONAL BESTS · {entries.length} EXERCISES</div>
+    <div style={h1}>Personal bests</div>
+    <div style={{fontSize:14,color:C.textMute,marginTop:2,marginBottom:16}}>{entries.length} exercises</div>
     {Object.entries(byMuscle).map(([muscle,list])=>(<div key={muscle} style={{marginBottom:14}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><div style={{width:6,height:6,borderRadius:"50%",background:MC[muscle]||C.textMute}}/><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,color:MC[muscle]||C.textMute,letterSpacing:1,textTransform:"uppercase"}}>{muscle}</div></div>
-      <div style={card}>{list.map((e,i)=>{const orm=est1RM(e.weight,e.reps),date=e.date?new Date(e.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";return(<div key={e.id} style={{padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10}}>
-        <div style={{flex:1}}><div style={{fontWeight:600,fontSize:14,color:C.text}}>{e.ex.name}</div><div style={{fontSize:11,color:C.textMute,marginTop:2}}>{date}</div></div>
-        <div style={{textAlign:"right"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.orange}}>{e.weight}<span style={{fontSize:12,fontWeight:500}}>kg</span></div><div style={{fontSize:11,color:C.textMute}}>{e.reps} reps · est {orm}kg 1RM</div></div>
-                  <button style={{...btn("danger"),padding:"5px 7px",marginLeft:6,flexShrink:0}} onClick={()=>deletePb(e.id)}>{Ic.trash}</button>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><div style={{width:6,height:6,borderRadius:"50%",background:MC[muscle]||C.textMute}}/><div style={{fontWeight:700,fontSize:14,color:MC[muscle]||C.textMute}}>{muscle}</div></div>
+      <div style={card}>{list.map((e,i)=>{const orm=est1RM(e.weight,e.reps),date=e.date?new Date(e.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";return(<div key={e.id} style={{padding:"12px 12px 12px 16px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10}}>
+        <div style={{flex:1,minWidth:0}}><div style={{fontWeight:650,fontSize:16,color:C.text}}>{e.ex.name}</div><div style={{fontSize:12,color:C.textMute,marginTop:2}}>{date}{date?" · ":""}est {orm}kg 1RM</div></div>
+        <div style={{textAlign:"right",flexShrink:0}}><div style={{fontWeight:800,fontSize:20,letterSpacing:-0.5,color:C.text,fontVariantNumeric:"tabular-nums"}}>{e.weight}<span style={{fontSize:12,fontWeight:600,color:C.textMute}}> kg</span></div><div style={{fontSize:12,fontWeight:600,color:C.orange}}>× {e.reps} reps</div></div>
+                  <button aria-label={`Delete PB for ${e.ex.name}`} style={{width:36,height:36,borderRadius:18,border:"none",background:"transparent",color:C.textFaint,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} onClick={()=>deletePb(e.id)}>{Ic.trash}</button>
       </div>);})}
       </div>
     </div>))}
@@ -2603,7 +2612,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
               {/* Muscle group filter */}
               <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10}}>
                 {MUSCLES.map(m => (
-                  <button key={m} onClick={()=>setBrowseMuscle(m)} style={{flexShrink:0,padding:"6px 12px",borderRadius:6,border:"1px solid",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:0.5,textTransform:"uppercase",background:filterMuscle===m?(MC[m]||C.orange):"transparent",color:filterMuscle===m?C.text:C.textMute,borderColor:filterMuscle===m?(MC[m]||C.orange):C.lineStrong}}>{m}</button>
+                  <button key={m} onClick={()=>setBrowseMuscle(m)} style={pillS(filterMuscle===m,MC[m]||C.orange)}>{m}</button>
                 ))}
               </div>
               <div style={card}>
@@ -3326,11 +3335,11 @@ function CardioTab({data,onSave}){
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:6}}>CARDIO SESSIONS</div>
+      <div style={{...h1,marginBottom:4}}>Cardio</div>
       <div style={{fontSize:12,color:C.textMute,marginBottom:14}}>👟 Daily steps are now logged in your Daily Check-in tab.</div>
 
       <div style={{...card,padding:14,marginBottom:12}}>
-        <SectionHead label="Log Cardio Session"/>
+        <SectionHead label="Log a cardio session"/>
         <div style={{marginBottom:8}}>
           <label style={lbl}>Type</label>
           <select style={{...inp,appearance:"none"}} value={sessType} onChange={e=>setSessType(e.target.value)}>
@@ -3357,7 +3366,7 @@ function CardioTab({data,onSave}){
             <input style={{...inp,WebkitAppearance:"none",appearance:"none",lineHeight:"normal"}} type="date" value={sessDate} onChange={e=>setSessDate(e.target.value)}/>
           </div>
         </div>
-        <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"11px"}} onClick={addSession}>{Ic.plus} Log Session</button>
+        <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"11px"}} onClick={addSession}>{Ic.plus} Log session</button>
       </div>
 
       {/* Session stats summary */}
@@ -3416,7 +3425,7 @@ function CardioTab({data,onSave}){
                 <button style={{...btn("danger"),padding:"5px 7px"}} onClick={()=>removeSession(s.id)}>{Ic.trash}</button>
               </div>
             ))}
-            {sessions.length>14&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllSess(!showAllSess)}>{showAllSess?"Show Less":`Show All ${sessions.length}`}</button></div>}
+            {sessions.length>14&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllSess(!showAllSess)}>{showAllSess?"Show Less":`Show all ${sessions.length}`}</button></div>}
           </div>
         </>
       )}
@@ -3519,12 +3528,12 @@ function RunningTab({data,onSave,cardioData,onSaveCardio}){
 
   return(
     <div style={{padding:"14px 14px 32px"}}>
-      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.text,letterSpacing:0.5,marginBottom:6}}>RUN TRAINER</div>
+      <div style={{...h1,marginBottom:4}}>Run trainer</div>
       <div style={{fontSize:12,color:C.textMute,marginBottom:16}}>Guided run/walk programmes with voice prompts. For best results when your screen locks, keep music playing.</div>
 
       {/* Programme selector */}
       <div style={{marginBottom:16}}>
-        <SectionHead label="Choose Programme"/>
+        <SectionHead label="Choose a programme"/>
         {Object.values(RUN_PROGRAMMES).map(p=>(
           <div key={p.id} onClick={()=>selectProgramme(p.id)} style={{...card,padding:"14px",marginBottom:8,cursor:"pointer",border:progId===p.id?"1px solid rgba(255,122,46,0.55)":"1px solid rgba(255,255,255,0.10)",background:progId===p.id?C.orangeBg:C.surface}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
