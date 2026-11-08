@@ -1581,7 +1581,7 @@ const cancelRestAlert=()=>restQ(async()=>{
   if(s?.token)await dbSave(s.token,s.userId,"rest_timer",{id:null,endAt:null});
 });
 
-function RestTimer(){
+function RestTimer({compact=false}){
   const PRESETS=[60,90,120,180];
   const [duration,setDuration]=useState(90);
   const [timeLeft,setTimeLeft]=useState(null);
@@ -1590,6 +1590,15 @@ function RestTimer(){
   const [notif,setNotif]=useState(()=>pushSupported()?Notification.permission:"unsupported");
   const endTimeRef=useRef(null);
   const intervalRef=useRef(null);
+  const rootRef=useRef(null);
+  // Close the panel when typing starts or when you tap anywhere else
+  useEffect(()=>{if(compact)setExpanded(false);},[compact]);
+  useEffect(()=>{
+    if(!expanded)return;
+    const onDown=e=>{if(rootRef.current&&!rootRef.current.contains(e.target))setExpanded(false);};
+    document.addEventListener("pointerdown",onDown,true);
+    return()=>document.removeEventListener("pointerdown",onDown,true);
+  },[expanded]);
 
   const tick=()=>{
     if(endTimeRef.current==null)return;
@@ -1609,7 +1618,7 @@ function RestTimer(){
     // Store the absolute end time, which survives phone sleep and tab throttling
     const endAt=Date.now()+d*1000;
     endTimeRef.current=endAt;
-    setTimeLeft(d);setRunning(true);
+    setTimeLeft(d);setRunning(true);setExpanded(false);
     intervalRef.current=setInterval(tick,250);
     // Lock-screen alert. First time, ask for permission (must happen on the tap itself).
     const id=`r${endAt}`;
@@ -1644,8 +1653,21 @@ function RestTimer(){
 
   const RC=113.1;
   const ringFrac=running||done?pct:0;
+  if(compact){
+    if(!running&&!done)return null;
+    return(
+      <button ref={rootRef} aria-label={done?"Rest over":`Rest timer, ${fmt(timeLeft)} left`} onMouseDown={e=>e.preventDefault()} onClick={()=>{try{document.activeElement?.blur();}catch{}setTimeout(()=>setExpanded(true),220);}}
+        style={{height:40,padding:"0 12px 0 6px",borderRadius:20,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.85)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 8px 24px rgba(0,0,0,0.5)`,display:"flex",alignItems:"center",gap:6,cursor:"pointer",color:done?C.red:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:15,fontWeight:750,fontVariantNumeric:"tabular-nums"}}>
+        <svg width="28" height="28" viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="22" cy="22" r="18" fill="none" stroke={C.line} strokeWidth="5"/>
+          {ringFrac>0&&<circle cx="22" cy="22" r="18" fill="none" stroke={done?C.red:C.blue} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${(RC*ringFrac).toFixed(1)} ${RC}`} transform="rotate(-90 22 22)"/>}
+        </svg>
+        {done?"GO!":fmt(timeLeft)}
+      </button>
+    );
+  }
   return(
-    <div style={{position:"relative",flexShrink:0}}>
+    <div ref={rootRef} style={{position:"relative",flexShrink:0}}>
       {expanded&&(
         <div style={{position:"absolute",bottom:72,left:0,width:250,background:"rgba(30,30,36,0.95)",backdropFilter:"blur(36px) saturate(180%)",WebkitBackdropFilter:"blur(36px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderRadius:28,padding:14,boxShadow:`${C.glassHi}, 0 16px 44px rgba(0,0,0,0.6)`}}>
           <div style={{display:"flex",gap:6,marginBottom:12}}>
@@ -1790,6 +1812,16 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   const [newPbIds,setNewPbIds]=useState(new Set());
   const [pendingPbs,setPendingPbs]=useState([]);
   const [menuFor,setMenuFor]=useState(null);// {pi, activeId}
+  // While the keyboard is up, shrink the bottom bar so it doesn't cover the sets
+  const [typing,setTyping]=useState(false);
+  useEffect(()=>{
+    const isField=el=>!!el&&(el.tagName==="INPUT"||el.tagName==="TEXTAREA");
+    let t;
+    const onIn=e=>{if(isField(e.target)){clearTimeout(t);setTyping(true);}};
+    const onOut=e=>{if(isField(e.target)){clearTimeout(t);t=setTimeout(()=>{if(!isField(document.activeElement))setTyping(false);},180);}};
+    document.addEventListener("focusin",onIn);document.addEventListener("focusout",onOut);
+    return()=>{document.removeEventListener("focusin",onIn);document.removeEventListener("focusout",onOut);clearTimeout(t);};
+  },[]);
   const [completeOpen,setCompleteOpen]=useState(false);
   const [sessionStats,setSessionStats]=useState(null);
   const [saved,setSaved]=useState(false);
@@ -2111,9 +2143,9 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
         />
       </div>
     </div>
-    <div style={{position:"absolute",left:12,right:12,bottom:"calc(env(safe-area-inset-bottom, 0px) + 12px)",display:"flex",gap:10,alignItems:"center",zIndex:50}}>
-      <RestTimer/>
-      <button onClick={handleSave} style={{flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?"rgba(40,40,48,0.78)":C.orange,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>
+    <div style={{position:"absolute",left:typing?"auto":12,right:12,bottom:typing?8:"calc(env(safe-area-inset-bottom, 0px) + 12px)",display:"flex",gap:10,alignItems:"center",justifyContent:"flex-end",zIndex:50,pointerEvents:"none"}}>
+      <div style={{pointerEvents:"auto"}}><RestTimer compact={typing}/></div>
+      {!typing&&<button onClick={handleSave} style={{pointerEvents:"auto",flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?"rgba(40,40,48,0.78)":C.orange,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>}
     </div>
     {exerciseInfo&&<ExerciseInfoPanel name={exerciseInfo.name} muscle={exerciseInfo.muscle} onClose={()=>setExerciseInfo(null)}/>}
     {menuFor&&menuEx&&(()=>{
