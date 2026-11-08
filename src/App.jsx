@@ -1583,7 +1583,7 @@ const cancelRestAlert=()=>restQ(async()=>{
 
 function RestTimer({compact=false}){
   const PRESETS=[60,90,120,180];
-  const [duration,setDuration]=useState(90);
+  const [duration,setDuration]=useState(()=>{try{const v=+localStorage.getItem("rnf:restLen");return PRESETS.includes(v)?v:90;}catch{return 90;}});
   const [timeLeft,setTimeLeft]=useState(null);
   const [running,setRunning]=useState(false);
   const [expanded,setExpanded]=useState(false);
@@ -1653,60 +1653,61 @@ function RestTimer({compact=false}){
 
   const RC=113.1;
   const ringFrac=running||done?pct:0;
+  // One tap starts the rest, another stops it. The arrow opens the length picker.
+  const toggle=()=>{if(running)stop();else start(duration);};
+  const pick=p=>{setDuration(p);try{localStorage.setItem("rnf:restLen",String(p));}catch{}start(p);};
+  const lenLabel=p=>p===60?"1m":p===90?"1:30":p===120?"2m":p===180?"3m":fmt(p);
+  const mainLabel=done?"Rest over, tap to start another":running?`Stop rest, ${fmt(timeLeft)} left`:`Start ${lenLabel(duration)} rest`;
+  const ring=(size,sw)=>(
+    <svg width={size} height={size} viewBox="0 0 44 44" aria-hidden="true">
+      <circle cx="22" cy="22" r="18" fill="none" stroke={C.line} strokeWidth={sw}/>
+      {ringFrac>0&&<circle cx="22" cy="22" r="18" fill="none" stroke={done?C.red:C.blue} strokeWidth={sw} strokeLinecap="round" strokeDasharray={`${(RC*ringFrac).toFixed(1)} ${RC}`} transform="rotate(-90 22 22)" style={{transition:"stroke-dasharray .9s linear"}}/>}
+      {running?<rect x="17" y="17" width="10" height="10" rx="2" fill={C.text}/>:<path d="M18.5 15.5v13l11-6.5z" fill={done?C.red:C.text}/>}
+    </svg>
+  );
   if(compact){
-    if(!running&&!done)return null;
     return(
-      <button ref={rootRef} aria-label={done?"Rest over":`Rest timer, ${fmt(timeLeft)} left`} onMouseDown={e=>e.preventDefault()} onClick={()=>{try{document.activeElement?.blur();}catch{}setTimeout(()=>setExpanded(true),220);}}
+      <button ref={rootRef} aria-label={mainLabel} onMouseDown={e=>e.preventDefault()} onClick={toggle}
         style={{height:40,padding:"0 12px 0 6px",borderRadius:20,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.85)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 8px 24px rgba(0,0,0,0.5)`,display:"flex",alignItems:"center",gap:6,cursor:"pointer",color:done?C.red:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:15,fontWeight:750,fontVariantNumeric:"tabular-nums"}}>
-        <svg width="28" height="28" viewBox="0 0 44 44" aria-hidden="true">
-          <circle cx="22" cy="22" r="18" fill="none" stroke={C.line} strokeWidth="5"/>
-          {ringFrac>0&&<circle cx="22" cy="22" r="18" fill="none" stroke={done?C.red:C.blue} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${(RC*ringFrac).toFixed(1)} ${RC}`} transform="rotate(-90 22 22)"/>}
-        </svg>
-        {done?"GO!":fmt(timeLeft)}
+        {ring(28,5)}
+        {done?"GO!":running?fmt(timeLeft):`Rest ${lenLabel(duration)}`}
       </button>
     );
   }
   return(
     <div ref={rootRef} style={{position:"relative",flexShrink:0}}>
       {expanded&&(
-        <div style={{position:"absolute",bottom:72,left:0,width:250,background:"rgba(30,30,36,0.95)",backdropFilter:"blur(36px) saturate(180%)",WebkitBackdropFilter:"blur(36px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderRadius:28,padding:14,boxShadow:`${C.glassHi}, 0 16px 44px rgba(0,0,0,0.6)`}}>
-          <div style={{display:"flex",gap:6,marginBottom:12}}>
+        <div role="dialog" aria-label="Rest length" style={{position:"absolute",bottom:72,right:0,width:260,background:"rgba(30,30,36,0.95)",backdropFilter:"blur(36px) saturate(180%)",WebkitBackdropFilter:"blur(36px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderRadius:28,padding:14,boxShadow:`${C.glassHi}, 0 16px 44px rgba(0,0,0,0.6)`}}>
+          <div style={{fontSize:13,fontWeight:600,color:C.textMute,marginBottom:10}}>Rest length</div>
+          <div style={{display:"flex",gap:6}}>
             {PRESETS.map(p=>(
-              <button key={p} onClick={()=>{setDuration(p);stop();}} style={{flex:1,height:36,borderRadius:18,border:"none",cursor:"pointer",background:duration===p?C.orange:C.field,color:duration===p?C.ink:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:13}}>
-                {p<60?`${p}s`:p===60?"1m":p===90?"1:30":p===120?"2m":"3m"}
+              <button key={p} onClick={()=>pick(p)} style={{flex:1,height:44,borderRadius:22,border:"none",cursor:"pointer",background:duration===p?C.orange:C.field,color:duration===p?C.ink:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:15}}>
+                {lenLabel(p)}
               </button>
             ))}
           </div>
-          <div style={{textAlign:"center",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:36,letterSpacing:-1,fontVariantNumeric:"tabular-nums",color:done?C.red:running?C.blue:C.text,marginBottom:12}}>
-            {done?"GO!":timeLeft!=null?fmt(timeLeft):fmt(duration)}
-          </div>
-          {!running&&timeLeft===null&&<button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={()=>start(duration)}>Start rest</button>}
-          {running&&<button style={{...btn("ghost"),width:"100%",justifyContent:"center"}} onClick={stop}>Stop</button>}
-          {!running&&timeLeft!==null&&(
-            <div style={{display:"flex",gap:6}}>
-              <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>start(duration)}>Restart</button>
-              <button style={{...btn("ghost"),flex:1,justifyContent:"center"}} onClick={stop}>Clear</button>
-            </div>
-          )}
-          <div style={{fontSize:12,color:notif==="granted"?C.green:C.textMute,marginTop:10,lineHeight:1.4,textAlign:"center"}}>
+          <div style={{fontSize:12,color:C.textMute,marginTop:10,lineHeight:1.4}}>Picking one starts it straight away and keeps it as your default.</div>
+          <div style={{fontSize:12,color:notif==="granted"?C.green:C.textMute,marginTop:8,lineHeight:1.4}}>
             {notif==="granted"?"🔔 Lock screen alert is on"
               :notif==="denied"?"Notifications are off. Turn them on for this app in iPhone Settings to get an alert when your phone is locked."
-              :notif==="default"?"Tap Start rest and allow notifications to get an alert when your phone is locked."
+              :notif==="default"?"Start a rest and allow notifications to get an alert when your phone is locked."
               :"Add the app to your home screen to get an alert when your phone is locked."}
           </div>
         </div>
       )}
-      <button aria-label={done?"Rest over":running?`Rest timer, ${fmt(timeLeft)} left`:"Rest timer"} onClick={()=>setExpanded(e=>!e)} style={{height:60,padding:"0 16px 0 8px",borderRadius:30,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.78)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 16px 40px rgba(0,0,0,0.55)`,display:"flex",alignItems:"center",gap:10,cursor:"pointer",color:C.text,fontFamily:"'Inter',system-ui,sans-serif"}}>
-        <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-          <circle cx="22" cy="22" r="18" fill="none" stroke={C.line} strokeWidth="4"/>
-          {ringFrac>0&&<circle cx="22" cy="22" r="18" fill="none" stroke={done?C.red:C.blue} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(RC*ringFrac).toFixed(1)} ${RC}`} transform="rotate(-90 22 22)" style={{transition:"stroke-dasharray .9s linear"}}/>}
-          {!running&&!done&&<path d="M22 14v8l5 3" fill="none" stroke={C.textMute} strokeWidth="2.2" strokeLinecap="round"/>}
-        </svg>
-        <span style={{textAlign:"left"}}>
-          <span style={{display:"block",fontSize:11,fontWeight:700,letterSpacing:0.4,color:done?C.red:C.textMute}}>{done?"GO!":"REST"}</span>
-          <span style={{display:"block",fontSize:18,fontWeight:750,fontVariantNumeric:"tabular-nums"}}>{timeLeft!=null?fmt(timeLeft):fmt(duration)}</span>
-        </span>
-      </button>
+      <div style={{height:60,borderRadius:30,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.92)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 16px 40px rgba(0,0,0,0.55)`,display:"flex",alignItems:"center",overflow:"hidden"}}>
+        <button aria-label={mainLabel} onClick={toggle} style={{height:"100%",padding:"0 10px 0 8px",border:"none",background:"none",display:"flex",alignItems:"center",gap:10,cursor:"pointer",color:C.text,fontFamily:"'Inter',system-ui,sans-serif"}}>
+          {ring(44,4)}
+          <span style={{textAlign:"left",minWidth:52}}>
+            <span style={{display:"block",fontSize:11,fontWeight:700,letterSpacing:0.4,color:done?C.red:running?C.blue:C.textMute}}>{done?"GO!":running?"TAP TO STOP":"REST"}</span>
+            <span style={{display:"block",fontSize:18,fontWeight:750,fontVariantNumeric:"tabular-nums"}}>{running?fmt(timeLeft):fmt(duration)}</span>
+          </span>
+        </button>
+        <div style={{width:1,height:30,background:C.line}}/>
+        <button aria-label="Rest length" aria-expanded={expanded} onClick={()=>setExpanded(e=>!e)} style={{height:"100%",width:40,border:"none",background:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.textMute}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{transform:expanded?"rotate(180deg)":"none",transition:"transform .15s"}}><path d="M6 15l6-6 6 6"/></svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -2144,8 +2145,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
       </div>
     </div>
     <div style={{position:"absolute",left:typing?"auto":12,right:12,bottom:typing?8:"calc(env(safe-area-inset-bottom, 0px) + 12px)",display:"flex",gap:10,alignItems:"center",justifyContent:"flex-end",zIndex:50,pointerEvents:"none"}}>
-      <div style={{pointerEvents:"auto"}}><RestTimer compact={typing}/></div>
       {!typing&&<button onClick={handleSave} style={{pointerEvents:"auto",flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?"rgba(40,40,48,0.78)":C.orange,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>}
+      <div style={{pointerEvents:"auto"}}><RestTimer compact={typing}/></div>
     </div>
     {exerciseInfo&&<ExerciseInfoPanel name={exerciseInfo.name} muscle={exerciseInfo.muscle} onClose={()=>setExerciseInfo(null)}/>}
     {menuFor&&menuEx&&(()=>{
