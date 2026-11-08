@@ -197,6 +197,7 @@ function SectionHead({label}){return <div style={{fontWeight:700,fontSize:16,let
 export default function App(){
   const [session,setSession]=useState(null);
   const [booting,setBooting]=useState(true);
+  useEffect(()=>{try{if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});}catch{}},[]);
   useEffect(()=>{(async()=>{const s=await loadSession();if(s?.refreshToken){const r=await sbRefresh(s.refreshToken);if(r.access_token){const ns={token:r.access_token,refreshToken:r.refresh_token,userId:r.user.id,email:r.user.email};setSession(ns);await storeSession(ns);}}setBooting(false);})();},[]);
   // iOS standalone-PWA viewport handling: measure the real visible height and
   // size the app shell to it (--appH). Re-measure on any resize, keyboard
@@ -1554,12 +1555,39 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
 }
 
 // ─── Rest Timer (floating) ────────────────────────────────────────────────────
+// ─── Rest timer lock-screen alert (web push) ─────────────────────────────────
+// A locked iPhone pauses the app, so it can't beep. Instead the server sends a
+// push notification when the rest ends (api/rest-push.js). Needs the app on the
+// home screen and notifications allowed.
+const VAPID_PUB="BJDggWxoGQAgob0Cd1Ts8v-rt_lHCuOgS7XMjt5WbPBFVi_EDYq-QbAjkudpFQoiiA4P-f8wHx7-mGXPmuvTUSk";
+const pushSupported=()=>typeof window!=="undefined"&&typeof navigator!=="undefined"&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+const b64uBytes=s=>{const b=atob((s+"=".repeat((4-s.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0));};
+let restQueue=Promise.resolve();
+const restQ=fn=>{restQueue=restQueue.then(fn).catch(e=>console.error("rest alert:",e));return restQueue;};
+async function getPushSub(){
+  if(!pushSupported()||Notification.permission!=="granted")return null;
+  const reg=await navigator.serviceWorker.ready;
+  return (await reg.pushManager.getSubscription())||(await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uBytes(VAPID_PUB)}));
+}
+const scheduleRestAlert=(id,endAt)=>restQ(async()=>{
+  const sub=await getPushSub();if(!sub)return;
+  let s=await loadSession();
+  if(s?.token){await dbSave(s.token,s.userId,"rest_timer",{id,endAt});s=await loadSession();}
+  await fetch("/api/rest-push",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subscription:sub.toJSON(),endAt,id,token:s?.token||null})});
+});
+const cancelRestAlert=()=>restQ(async()=>{
+  if(!pushSupported()||Notification.permission!=="granted")return;
+  const s=await loadSession();
+  if(s?.token)await dbSave(s.token,s.userId,"rest_timer",{id:null,endAt:null});
+});
+
 function RestTimer(){
   const PRESETS=[60,90,120,180];
   const [duration,setDuration]=useState(90);
   const [timeLeft,setTimeLeft]=useState(null);
   const [running,setRunning]=useState(false);
   const [expanded,setExpanded]=useState(false);
+  const [notif,setNotif]=useState(()=>pushSupported()?Notification.permission:"unsupported");
   const endTimeRef=useRef(null);
   const intervalRef=useRef(null);
 
@@ -1578,16 +1606,26 @@ function RestTimer(){
 
   const start=(d)=>{
     clearInterval(intervalRef.current);
-    // Store the absolute end time — survives phone sleep / tab throttling
-    endTimeRef.current=Date.now()+d*1000;
+    // Store the absolute end time, which survives phone sleep and tab throttling
+    const endAt=Date.now()+d*1000;
+    endTimeRef.current=endAt;
     setTimeLeft(d);setRunning(true);
     intervalRef.current=setInterval(tick,250);
+    // Lock-screen alert. First time, ask for permission (must happen on the tap itself).
+    const id=`r${endAt}`;
+    if(pushSupported()){
+      if(Notification.permission==="default"){
+        Notification.requestPermission().then(p=>{setNotif(p);if(p==="granted")scheduleRestAlert(id,endAt);}).catch(()=>{});
+      }else if(Notification.permission==="granted")scheduleRestAlert(id,endAt);
+    }
   };
 
   const stop=()=>{
+    const wasRunning=endTimeRef.current!=null;
     clearInterval(intervalRef.current);
     endTimeRef.current=null;
     setRunning(false);setTimeLeft(null);
+    if(wasRunning)cancelRestAlert();
   };
 
   // Recalculate immediately when tab becomes visible again (catches up after sleep)
@@ -1628,6 +1666,12 @@ function RestTimer(){
               <button style={{...btn("ghost"),flex:1,justifyContent:"center"}} onClick={stop}>Clear</button>
             </div>
           )}
+          <div style={{fontSize:12,color:notif==="granted"?C.green:C.textMute,marginTop:10,lineHeight:1.4,textAlign:"center"}}>
+            {notif==="granted"?"🔔 Lock screen alert is on"
+              :notif==="denied"?"Notifications are off. Turn them on for this app in iPhone Settings to get an alert when your phone is locked."
+              :notif==="default"?"Tap Start rest and allow notifications to get an alert when your phone is locked."
+              :"Add the app to your home screen to get an alert when your phone is locked."}
+          </div>
         </div>
       )}
       <button aria-label={done?"Rest over":running?`Rest timer, ${fmt(timeLeft)} left`:"Rest timer"} onClick={()=>setExpanded(e=>!e)} style={{height:60,padding:"0 16px 0 8px",borderRadius:30,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.78)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 16px 40px rgba(0,0,0,0.55)`,display:"flex",alignItems:"center",gap:10,cursor:"pointer",color:C.text,fontFamily:"'Inter',system-ui,sans-serif"}}>
