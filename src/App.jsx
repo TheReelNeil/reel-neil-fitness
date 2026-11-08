@@ -162,8 +162,8 @@ const Ic = {
 const css=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);}
-html{height:100%;overflow:hidden;background:${C.surface};}
-body{background:${C.surface};color:${C.text};font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.4;overscroll-behavior:none;position:fixed;inset:0;width:100%;overflow:hidden;}
+html{height:100%;overflow:hidden;background:${C.bg};}
+body{background:${C.bg};color:${C.text};font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.4;overscroll-behavior:none;position:fixed;inset:0;width:100%;overflow:hidden;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:${C.lineStrong};border-radius:2px;}
 input,select{font-family:'Inter',system-ui,sans-serif;font-size:15px;outline:none;color:${C.text};}
 input[type=number]::-webkit-inner-spin-button{opacity:1;}
@@ -288,6 +288,7 @@ function AuthScreen({onAuth}){
 // ─── Main App ─────────────────────────────────────────────────────────────────
 function MainApp({session,onLogout}){
   const [tab,setTab]=useState("home");
+  const [moreOpen,setMoreOpen]=useState(false);
   // Always start a tab at the top — scroll position shouldn't carry over
   useEffect(()=>{document.getElementById("scroller")?.scrollTo({top:0});},[tab]);
   const [exercises,setExercises]=useState(null);
@@ -438,7 +439,14 @@ function MainApp({session,onLogout}){
   if(!ready)return(<><style>{css}</style><div style={{...base,alignItems:"center",justifyContent:"center",gap:8}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:22,fontWeight:800,letterSpacing:2,color:C.orange}}>SYNCING…</div><div style={{fontSize:12,color:C.textMute}}>Loading your data</div></div></>);
   if(sessionDay!==null)return(<><style>{css}</style><SessionLogger day={activePlan?.days[sessionDay]} dayIdx={sessionDay} plan={activePlan} week={currentWeek} logs={logs} pbs={pbs} exMap={exMap} onLog={async(nl,np)=>{await saveLogs(nl);await savePbs(np);}} onSavePbs={savePbs} onReorder={exs=>savePlans(prev=>prev.map(p=>p.id!==activePlan.id?p:{...p,days:p.days.map((d,i)=>i!==sessionDay?d:{...d,exercises:exs})}))} onBack={()=>setSessionDay(null)}/></>);
 
-  const TABS=[["home","HOME",Ic.home],["daily","DAILY",Ic.daily],["today","TRAIN",Ic.today],["plans","PLANS",Ic.plan],["pbs","PBs",Ic.trophy],["exercises","EXERCISES",Ic.dumbbell],["calories","CALS",Ic.calories],["pics","PICS",Ic.camera],["cardio","CARDIO",Ic.cardio],["running","RUN",Ic.run]];
+  const nIc=d=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
+  const NAV=[["home","Home",nIc(<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9z"/>)],
+    ["today","Train",nIc(<path d="M6 7v10M18 7v10M3 9v6M21 9v6M6 12h12"/>)],
+    ["plans","Plans",nIc(<><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></>)],
+    ["pbs","PBs",nIc(<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/>)],
+    ["more","More",nIc(<><rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/></>)]];
+  const MORE=[["daily","Daily check-in",Ic.daily,C.green],["calories","Calories",Ic.calories,C.orange],["pics","Progress pics",Ic.camera,C.blue],["cardio","Cardio",Ic.cardio,C.red],["running","Run",Ic.run,C.gold],["exercises","Exercises",Ic.dumbbell,"#bf5af2"]];
+  const inMore=MORE.some(m=>m[0]===tab);
 
   return(<><style>{css}</style>
     <div style={base}>
@@ -468,7 +476,7 @@ function MainApp({session,onLogout}){
           </div>
         </div>
       </div>
-      <div id="scroller" style={{flex:1,overflowY:"auto",overflowX:"hidden"}}>
+      <div id="scroller" style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 92px)"}}>
         {tab==="home"     &&<HomeTab session={session} activePlan={activePlan} currentWeek={currentWeek} logs={logs} pbs={pbs} exMap={exMap} weightData={weightData} calProfile={calProfile} onGoToToday={()=>setTab("today")} onStartSession={setSessionDay} userName={userName} onSaveUserName={saveUserName} customMacros={customMacros} cardioData={cardioData} dailyLog={dailyLog} measurements={measurements} pics={pics} onGoTab={setTab}/>}
         {tab==="today"    &&<TodayTab activePlan={activePlan} currentWeek={currentWeek} logs={logs} exMap={exMap} onStartSession={setSessionDay} onWeekChange={saveWeek} onSelectPlan={()=>setTab("plans")} onSaveLogs={saveLogs} plans={plans} onSavePlans={savePlans}/>}
         {tab==="plans"    &&<PlansTab plans={plans} exercises={exercises} activePlanId={activePlanId} exMap={exMap} onActivate={saveActive} onSavePlans={savePlans}/>}
@@ -480,22 +488,35 @@ function MainApp({session,onLogout}){
         {tab==="cardio"   &&<CardioTab data={cardioData} onSave={saveCardioData}/>}
         {tab==="running"  &&<RunningTab data={runData} onSave={saveRunData} cardioData={cardioData} onSaveCardio={saveCardioData}/>}
       </div>
-      <nav style={{borderTop:`1px solid ${C.lineStrong}`,background:C.surface,flexShrink:0,boxShadow:"0 -8px 30px rgba(0,0,0,0.45)",paddingBottom:6}}>
-        <div style={{display:"flex"}}>
-          {TABS.slice(0,5).map(([id,label,icon])=>(
-            <button key={id} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 2px",border:"none",outline:"none",background:tab===id?C.orangeBg:"none",color:tab===id?C.orange:C.text,cursor:"pointer",fontSize:9,fontFamily:"'Inter',system-ui,sans-serif",fontWeight:tab===id?700:600,letterSpacing:0.3,textTransform:"uppercase"}} onClick={()=>setTab(id)}>
-              {icon}{label}
+      <div aria-hidden="true" style={{position:"absolute",left:0,right:0,bottom:0,height:"calc(env(safe-area-inset-bottom, 0px) + 110px)",background:"linear-gradient(to bottom, rgba(7,7,10,0), rgba(7,7,10,0.85) 60%)",pointerEvents:"none",zIndex:55}}/>
+      <nav aria-label="Main" style={{position:"absolute",left:14,right:14,bottom:"calc(env(safe-area-inset-bottom, 0px) + 10px)",height:68,borderRadius:34,background:"rgba(38,38,46,0.62)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",border:"1px solid rgba(255,255,255,0.15)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2), 0 18px 44px rgba(0,0,0,0.6)",display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",alignItems:"center",padding:"0 6px",zIndex:60}}>
+        {NAV.map(([id,label,icon])=>{
+          const on=id==="more"?(inMore||moreOpen):(tab===id&&!moreOpen);
+          return(
+            <button key={id} aria-label={label} aria-current={on&&id!=="more"?"page":undefined} onClick={()=>{if(id==="more")setMoreOpen(o=>!o);else{setMoreOpen(false);setTab(id);}}}
+              style={{height:56,margin:"0 2px",borderRadius:28,border:"none",background:on?C.orangeBg:"transparent",color:on?"#ffa36b":"#d1d1d6",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:10,fontWeight:on?700:600,padding:0}}>
+              {icon}<span>{label}</span>
             </button>
-          ))}
-        </div>
-        <div style={{display:"flex",borderTop:`1px solid ${C.line}`}}>
-          {TABS.slice(5).map(([id,label,icon])=>(
-            <button key={id} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"8px 2px 12px",border:"none",outline:"none",background:tab===id?C.orangeBg:"none",color:tab===id?C.orange:C.text,cursor:"pointer",fontSize:9,fontFamily:"'Inter',system-ui,sans-serif",fontWeight:tab===id?700:600,letterSpacing:0.3,textTransform:"uppercase"}} onClick={()=>setTab(id)}>
-              {icon}{label}
-            </button>
-          ))}
-        </div>
+          );
+        })}
       </nav>
+      {moreOpen&&(
+        <div role="dialog" aria-label="More" style={{position:"fixed",inset:0,zIndex:58,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
+          <div onClick={()=>setMoreOpen(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}}/>
+          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:"rgba(34,34,40,0.86)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2), 0 -10px 60px rgba(0,0,0,0.6)",padding:14,animation:"fadeIn .18s ease-out"}}>
+            <div style={{fontSize:13,fontWeight:600,color:C.textMute,padding:"2px 6px 10px"}}>More</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
+              {MORE.map(([id,label,icon,col])=>(
+                <button key={id} onClick={()=>{setTab(id);setMoreOpen(false);}} aria-current={tab===id?"page":undefined}
+                  style={{height:92,borderRadius:22,border:`1px solid ${tab===id?col+"88":"rgba(255,255,255,0.08)"}`,background:tab===id?col+"1f":"rgba(255,255,255,0.06)",color:C.text,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:600,padding:"0 4px"}}>
+                  <span style={{width:40,height:40,borderRadius:20,background:col+"26",color:col,display:"flex",alignItems:"center",justifyContent:"center"}}>{icon}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div></>);
 }
 
@@ -2879,15 +2900,15 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
     const hrv=latestOf("hrv"),rhr=latestOf("rhr");
     if(sleep==null&&!hrv&&!rhr)return null;
     // Verdict
-    let verdict={text:"On your baseline — business as usual.",color:C.blue,icon:"⚖️"};
+    let verdict={text:"On your baseline, business as usual.",color:C.blue,icon:"⚖️"};
     const lowSleep=sleep!=null&&sleep<6;
     const hrvLow=hrv&&hrvAvg&&hrv.v<=hrvAvg*0.9;
     const hrvHigh=hrv&&hrvAvg&&hrv.v>=hrvAvg*1.05;
     const rhrHigh=rhr&&rhrAvg&&rhr.v>=rhrAvg*1.06;
-    if((lowSleep&&(hrvLow||rhrHigh))||(hrvLow&&rhrHigh))verdict={text:"Running low — sleep short and recovery down. Go steady today.",color:C.red,icon:"🪫"};
-    else if(lowSleep)verdict={text:"Short night's sleep — don't chase PBs today.",color:C.gold,icon:"😴"};
-    else if(hrvLow||rhrHigh)verdict={text:"Recovery a touch below your norm — train, but keep it sensible.",color:C.gold,icon:"⚠️"};
-    else if(hrvHigh&&!lowSleep)verdict={text:"Recovery above your norm — good day to push. 💪",color:C.green,icon:"🔋"};
+    if((lowSleep&&(hrvLow||rhrHigh))||(hrvLow&&rhrHigh))verdict={text:"Running low. Sleep short and recovery down, so go steady today.",color:C.red,icon:"🪫"};
+    else if(lowSleep)verdict={text:"Short night's sleep, so don't chase PBs today.",color:C.gold,icon:"😴"};
+    else if(hrvLow||rhrHigh)verdict={text:"Recovery a touch below your norm. Train, but keep it sensible.",color:C.gold,icon:"⚠️"};
+    else if(hrvHigh&&!lowSleep)verdict={text:"Recovery above your norm, a good day to push. 💪",color:C.green,icon:"🔋"};
     return{sleep,sleepAvg,hrv,hrvAvg,rhr,rhrAvg,verdict};
   },[dailyLog,todayStr]);
 
@@ -2961,206 +2982,217 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
   const recentPbRow=Object.entries(pbs||{}).sort((a,b)=>new Date(b[1].date||0)-new Date(a[1].date||0))[0];
   const nextDayIdx=activePlan?activePlan.days.findIndex((_,i)=>!planLogs[currentWeek]?.[i]):-1;
 
-  const miniStat=(label,valEl,sub,color)=>(
-    <div key={label} style={{flex:"1 1 45%",background:C.surface,border:`1px solid ${C.line}`,borderRadius:10,padding:"10px 12px",minWidth:0}}>
-      <div style={{fontSize:9,color:C.textMute,fontWeight:700,letterSpacing:0.7,marginBottom:3,textTransform:"uppercase"}}>{label}</div>
-      <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:21,color:color||C.text,lineHeight:1}}>{valEl}</div>
-      {sub&&<div style={{fontSize:10,marginTop:3}}>{sub}</div>}
+  const miniStat=(label,valEl,sub,frac)=>(
+    <div key={label} style={{...card,marginBottom:0,padding:16,minWidth:0}}>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>{label}</div>
+      <div style={{fontSize:26,fontWeight:800,letterSpacing:-0.8,marginTop:4,color:C.text,fontVariantNumeric:"tabular-nums",lineHeight:1.1}}>{valEl}</div>
+      {frac!=null&&<div style={{height:5,borderRadius:3,background:"rgba(255,255,255,0.1)",marginTop:8,overflow:"hidden"}}><div style={{width:`${Math.round(frac*100)}%`,height:"100%",borderRadius:3,background:C.orange}}/></div>}
+      {sub&&<div style={{fontSize:12,fontWeight:600,marginTop:6}}>{sub}</div>}
     </div>
   );
   const delta=(cur,prev,unit,goodDown)=>{
     if(cur==null||prev==null)return null;
     const d=Math.round((cur-prev)*10)/10;
-    if(d===0)return <span style={{color:C.textMute}}>= last wk</span>;
+    if(d===0)return <span style={{color:C.textMute}}>Same as last week</span>;
     const good=goodDown?d<0:d>0;
-    return <span style={{color:good?C.green:C.red}}>{d>0?"▲":"▼"} {Math.abs(d).toLocaleString()}{unit} vs last wk</span>;
+    return <span style={{color:good?C.green:C.red}}>{d>0?"▲":"▼"} {Math.abs(d).toLocaleString()}{unit} vs last week</span>;
   };
 
-  return(
-    <div style={{padding:"14px 14px 32px"}}>
+  const hr=new Date().getHours();
+  const greeting=hr<12?"Good morning":hr<18?"Good afternoon":"Good evening";
+  const kick=(t,col)=>(<div style={{fontSize:12,fontWeight:700,letterSpacing:0.7,color:col||C.textMute,textTransform:"uppercase"}}>{t}</div>);
+  const daysLogged=Object.keys(planLogs[currentWeek]||{}).filter(k=>!isNaN(k)).length;
+  const heroDay=activePlan&&nextDayIdx>=0?activePlan.days[nextDayIdx]:null;
+  const heroNames=heroDay?heroDay.exercises.map(ex=>exMap[ex.exerciseId]?.name).filter(Boolean):[];
+  const heroNote=heroDay?(planLogs[currentWeek-1]?.[`${nextDayIdx}_nextNote`]||"").trim():"";
+  const heroStat=(label,val,sub,subCol)=>(
+    <div key={label} style={{flex:1,minWidth:0}}>
+      <div style={{fontSize:11,fontWeight:600,color:C.textMute,letterSpacing:0.3}}>{label}</div>
+      <div style={{fontSize:18,fontWeight:800,letterSpacing:-0.4,marginTop:2,fontVariantNumeric:"tabular-nums",color:C.text,whiteSpace:"nowrap"}}>{val}</div>
+      {sub&&<div style={{fontSize:11,fontWeight:700,color:subCol||C.textMute,marginTop:1,whiteSpace:"nowrap"}}>{sub}</div>}
+    </div>
+  );
 
-      {/* Welcome */}
-      <div style={{...card,padding:"12px 14px",marginBottom:12,background:C.orangeBg,border:"1px solid rgba(255,122,46,0.28)"}}>
-        <div style={{fontSize:11,color:C.orange,fontWeight:600,letterSpacing:0.5,marginBottom:4}}>WELCOME BACK</div>
+  return(
+    <div style={{padding:"6px 12px 32px"}}>
+
+      {/* Greeting */}
+      <div style={{padding:"4px 8px 16px"}}>
         {editingName?(
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <input style={{...inp,flex:1,padding:"8px 12px",fontSize:15}} placeholder="Enter your name" value={nameInput}
+            <input style={{...inp,flex:1}} placeholder="Enter your name" value={nameInput}
               onChange={e=>setNameInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){onSaveUserName(nameInput);setEditingName(false);}}} autoFocus/>
-            <button style={{...btn("primary"),padding:"8px 12px"}} onClick={()=>{onSaveUserName(nameInput);setEditingName(false);}}>{Ic.check} Save</button>
-            <button style={{...btn("ghost"),padding:"8px 10px"}} onClick={()=>setEditingName(false)}>{Ic.x}</button>
+            <button style={btn("primary")} onClick={()=>{onSaveUserName(nameInput);setEditingName(false);}}>{Ic.check} Save</button>
+            <button aria-label="Cancel" style={{...btn("ghost"),padding:0,width:44,justifyContent:"center"}} onClick={()=>setEditingName(false)}>{Ic.x}</button>
           </div>
         ):(
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:22,color:C.text}}>{userName||session.email}</div>
-            <button style={{background:"none",border:"none",cursor:"pointer",color:C.orange,padding:4}} onClick={()=>{setNameInput(userName||"");setEditingName(true);}}>{Ic.edit}</button>
-          </div>
+          <>
+            <div style={{fontSize:14,color:C.textMute,fontWeight:500}}>{greeting}</div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:30,fontWeight:800,letterSpacing:-1,lineHeight:1.15,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{userName||session.email}</div>
+              <button aria-label="Edit name" style={{background:"none",border:"none",cursor:"pointer",color:C.textFaint,padding:6,display:"flex"}} onClick={()=>{setNameInput(userName||"");setEditingName(true);}}>{Ic.edit}</button>
+            </div>
+          </>
         )}
       </div>
 
+      {/* Today hero */}
+      {activePlan?(
+        <div style={{...card,borderRadius:32,padding:20,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22), 0 24px 60px rgba(0,0,0,0.45)"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            {kick(heroDay?"Today":"This week",C.orange)}
+            <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>{heroDay?`${heroNames.length} exercises`:activePlan.name}</div>
+          </div>
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,letterSpacing:-1,marginTop:4,lineHeight:1.1,color:C.text}}>{heroDay?heroDay.name:"All sessions done"}</div>
+          {heroDay&&heroNames.length>0&&(
+            <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
+              {heroNames.slice(0,3).map((n,i)=><span key={i} style={{fontSize:12,fontWeight:600,background:"rgba(255,255,255,0.08)",padding:"6px 11px",borderRadius:13,color:C.text}}>{n}</span>)}
+              {heroNames.length>3&&<span style={{fontSize:12,fontWeight:600,color:C.textMute,padding:"6px 4px"}}>+{heroNames.length-3} more</span>}
+            </div>
+          )}
+          {heroNote&&(
+            <div style={{marginTop:14,padding:"10px 14px",borderRadius:18,background:"rgba(255,214,10,0.09)",border:"1px solid rgba(255,214,10,0.16)",fontSize:13,color:C.text,lineHeight:1.4}}>
+              <span style={{fontWeight:700,color:C.gold}}>Note from last week: </span>{heroNote}
+            </div>
+          )}
+          {heroDay?(
+            <button style={{marginTop:16,width:"100%",height:56,borderRadius:28,border:"none",background:C.orange,color:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>{onStartSession(nextDayIdx);onGoToToday();}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={C.ink} aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>Start session
+            </button>
+          ):(
+            <button style={{...btn("ghost"),marginTop:16,width:"100%",justifyContent:"center",height:52,color:C.green}} onClick={onGoToToday}>{Ic.check} Every session logged this week</button>
+          )}
+          <div style={{display:"flex",gap:12,marginTop:16,paddingTop:14,borderTop:`1px solid ${C.line}`}}>
+            {heroStat("Volume this week",<>{Math.round(thisWeekVol).toLocaleString()}<span style={{fontSize:12,fontWeight:600,color:C.textMute}}> kg</span></>,lastWeekVol>0?(volDiff>=0?`+${Math.round(volDiff).toLocaleString()}kg on last week`:`last week ${Math.round(lastWeekVol).toLocaleString()}kg`):null,volDiff>=0?C.green:C.textMute)}
+            {heroStat("Sessions",<>{daysLogged}<span style={{fontSize:12,fontWeight:600,color:C.textMute}}> of {activePlan.days.length}</span></>,"this week")}
+            {heroStat("Week",<>{currentWeek}<span style={{fontSize:12,fontWeight:600,color:C.textMute}}> of {activePlan.weeks}</span></>,weeksLeft!=null?(weeksLeft>0?`${weeksLeft} to go`:"final week"):null)}
+          </div>
+        </div>
+      ):(
+        <div style={{...card,borderRadius:32,padding:20}}>
+          {kick("Get started",C.orange)}
+          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:26,fontWeight:800,letterSpacing:-0.8,marginTop:4,color:C.text}}>No active plan yet</div>
+          <div style={{fontSize:14,color:C.textMute,marginTop:4}}>Pick or build a training plan to start logging sessions.</div>
+          <button style={{...btn("primary"),marginTop:14,width:"100%",justifyContent:"center",height:52}} onClick={()=>onGoTab("plans")}>Go to plans</button>
+        </div>
+      )}
+
       {/* Sunday nudge */}
       {showSundayNudge&&(
-        <div style={{...card,padding:"12px 14px",marginBottom:12,background:C.goldBg,border:`1px solid ${C.gold}55`}}>
-          <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:8}}>📸 It's Sunday — {!photosThisWeek&&!measuredToday?"photos & measurements day":!photosThisWeek?"progress photos still to do":"measurements still to do"}</div>
-          <div style={{display:"flex",gap:8}}>
-            {!photosThisWeek&&<button style={{...btn("secondary"),flex:1,justifyContent:"center",padding:"9px"}} onClick={()=>onGoTab("pics")}>📷 Photos</button>}
-            {!measuredToday&&<button style={{...btn("secondary"),flex:1,justifyContent:"center",padding:"9px"}} onClick={()=>onGoTab("daily")}>📏 Measurements</button>}
+        <div style={{...card,padding:16,background:"rgba(255,214,10,0.08)",border:"1px solid rgba(255,214,10,0.22)"}}>
+          <div style={{fontSize:15,fontWeight:700,color:C.text}}>📸 It's Sunday</div>
+          <div style={{fontSize:13,color:C.textMute,marginTop:2}}>{!photosThisWeek&&!measuredToday?"Photos and measurements day":!photosThisWeek?"Progress photos still to do":"Measurements still to do"}</div>
+          <div style={{display:"flex",gap:8,marginTop:12}}>
+            {!photosThisWeek&&<button style={{...btn("ghost"),flex:1,justifyContent:"center"}} onClick={()=>onGoTab("pics")}>{Ic.camera} Photos</button>}
+            {!measuredToday&&<button style={{...btn("ghost"),flex:1,justifyContent:"center"}} onClick={()=>onGoTab("daily")}>📏 Measurements</button>}
           </div>
         </div>
       )}
 
-      {/* Today's check-in status */}
-      <div style={{...card,padding:14,marginBottom:12}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase"}}>Today's Check-in</div>
-          <div style={{fontSize:11,fontWeight:700,color:doneCount===todayItems.length?C.green:C.textMute}}>{doneCount}/{todayItems.length}</div>
+      {/* Check-in + week strip */}
+      <div style={{...card,padding:16}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{fontSize:17,fontWeight:750,letterSpacing:-0.3,color:C.text}}>Today's check-in</div>
+          <div style={{fontSize:12,fontWeight:700,padding:"5px 11px",borderRadius:999,background:doneCount===todayItems.length?C.greenBg:C.field,color:doneCount===todayItems.length?C.green:C.textMute}}>{doneCount} of {todayItems.length}</div>
         </div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:12}}>
           {todayItems.map(i=>(
-            <div key={i.label} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:16,fontSize:12,fontWeight:600,background:i.done?C.greenBg:C.field,color:i.done?C.green:C.textMute,border:`1px solid ${i.done?C.green+"44":C.line}`}}>
+            <div key={i.label} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"7px 11px",borderRadius:14,fontSize:12,fontWeight:600,background:i.done?C.greenBg:C.field,color:i.done?C.green:C.textMute}}>
               {i.done?"✓":"○"} {i.label}{i.val?<span style={{fontWeight:700}}> {i.val}</span>:""}
             </div>
           ))}
           {sYest&&(
-            <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"6px 10px",borderRadius:16,fontSize:12,fontWeight:600,background:C.blueBg,color:C.blue,border:`1px solid ${C.blue}33`}}>
-              👟 {sYest.steps.toLocaleString()} yday{stepsTarget?(sYest.steps>=stepsTarget?" ✓":""):""}
+            <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"7px 11px",borderRadius:14,fontSize:12,fontWeight:600,background:C.blueBg,color:C.blue}}>
+              👟 {sYest.steps.toLocaleString()} yesterday{stepsTarget&&sYest.steps>=stepsTarget?" ✓":""}
             </div>
           )}
         </div>
-        {doneCount<todayItems.length?(
-          <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"11px"}} onClick={()=>onGoTab("daily")}>{Ic.daily} Complete Check-in</button>
-        ):(
-          <div style={{textAlign:"center",padding:"6px",fontSize:13,color:C.green,fontWeight:600}}>✓ All done for today — nice work</div>
-        )}
-      </div>
-
-      {/* Week strip + streak */}
-      <div style={{...card,padding:"12px 14px",marginBottom:12}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase"}}>This Week</div>
-          {streak>1&&<div style={{fontSize:12,fontWeight:700,color:C.orange}}>🔥 {streak}-day streak</div>}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:16,marginBottom:8}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>This week</div>
+          {streak>1&&<div style={{fontSize:12,fontWeight:700,color:C.orange}}>🔥 {streak} day streak</div>}
         </div>
         <div style={{display:"flex",gap:6}}>
           {weekDays.map(d=>{
-            const done=isComplete(d);
-            const isT=d===todayStr;
-            const future=d>todayStr;
+            const done=isComplete(d),isT=d===todayStr,future=d>todayStr;
             return(
               <div key={d} style={{flex:1,textAlign:"center"}}>
-                <div style={{fontSize:9,color:isT?C.orange:C.textFaint,fontWeight:700,marginBottom:4}}>{new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"narrow"})}</div>
-                <div style={{width:24,height:24,borderRadius:"50%",margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,
-                  background:done?C.green:future?"transparent":C.field,
-                  color:done?"white":C.textFaint,
-                  border:isT?`2px solid ${C.orange}`:`1px solid ${done?C.green:C.line}`}}>
-                  {done?"✓":""}
-                </div>
+                <div style={{fontSize:10,color:isT?C.orange:C.textFaint,fontWeight:700,marginBottom:5}}>{new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"narrow"})}</div>
+                <div style={{width:28,height:28,borderRadius:14,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,
+                  background:done?C.green:future?"transparent":C.field,color:done?C.onDark:C.textFaint,
+                  border:isT?`2px solid ${C.orange}`:`1px solid ${done?C.green:C.line}`}}>{done?"✓":""}</div>
               </div>
             );
           })}
         </div>
+        {doneCount<todayItems.length?(
+          <button style={{...btn("primary"),width:"100%",justifyContent:"center",marginTop:16,height:50}} onClick={()=>onGoTab("daily")}>{Ic.daily} Complete check-in</button>
+        ):(
+          <div style={{textAlign:"center",marginTop:14,fontSize:13,color:C.green,fontWeight:600}}>✓ All done for today, nice work</div>
+        )}
       </div>
 
       {/* Recovery snapshot */}
       {recovery&&(
-        <div style={{...card,padding:14,marginBottom:12}}>
-          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase",marginBottom:10}}>Recovery</div>
+        <div style={{...card,padding:16}}>
+          <div style={{fontSize:17,fontWeight:750,letterSpacing:-0.3,color:C.text,marginBottom:12}}>Recovery</div>
           <div style={{display:"flex",gap:8,marginBottom:10}}>
-            {[["SLEEP",recovery.sleep!=null?`${recovery.sleep}h`:"—",recovery.sleepAvg!=null?`avg ${Math.round(recovery.sleepAvg*10)/10}h`:null,C.blue],
-              ["HRV",recovery.hrv?recovery.hrv.v:"—",recovery.hrvAvg!=null?`avg ${Math.round(recovery.hrvAvg)}`:null,C.green],
-              ["RHR",recovery.rhr?recovery.rhr.v:"—",recovery.rhrAvg!=null?`avg ${Math.round(recovery.rhrAvg)}`:null,C.red]].map(([l,v,sub,c])=>(
-              <div key={l} style={{flex:1,background:C.surfaceAlt,border:`1px solid ${c}22`,borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
-                <div style={{fontSize:9,color:c,fontWeight:700,letterSpacing:0.5}}>{l}</div>
-                <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,color:c}}>{v}</div>
-                {sub&&<div style={{fontSize:9,color:C.textMute}}>{sub}</div>}
+            {[["Sleep",recovery.sleep!=null?`${recovery.sleep}h`:"–",recovery.sleepAvg!=null?`avg ${Math.round(recovery.sleepAvg*10)/10}h`:null,C.blue],
+              ["HRV",recovery.hrv?recovery.hrv.v:"–",recovery.hrvAvg!=null?`avg ${Math.round(recovery.hrvAvg)}`:null,C.green],
+              ["Resting HR",recovery.rhr?recovery.rhr.v:"–",recovery.rhrAvg!=null?`avg ${Math.round(recovery.rhrAvg)}`:null,C.red]].map(([l,v,sub,c])=>(
+              <div key={l} style={{flex:1,background:C.field,borderRadius:18,padding:"10px 8px",textAlign:"center"}}>
+                <div style={{fontSize:11,color:c,fontWeight:700}}>{l}</div>
+                <div style={{fontSize:22,fontWeight:800,letterSpacing:-0.5,color:C.text,marginTop:2,fontVariantNumeric:"tabular-nums"}}>{v}</div>
+                {sub&&<div style={{fontSize:11,color:C.textMute}}>{sub}</div>}
               </div>
             ))}
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,background:recovery.verdict.color+"18",border:`1px solid ${recovery.verdict.color}44`,borderRadius:8,padding:"9px 12px"}}>
-            <span style={{fontSize:16}}>{recovery.verdict.icon}</span>
-            <span style={{fontSize:12.5,fontWeight:600,color:C.text}}>{recovery.verdict.text}</span>
+          <div style={{display:"flex",alignItems:"center",gap:10,background:recovery.verdict.color+"18",borderRadius:16,padding:"10px 12px"}}>
+            <span style={{fontSize:18}}>{recovery.verdict.icon}</span>
+            <span style={{fontSize:13,fontWeight:600,color:C.text,lineHeight:1.4}}>{recovery.verdict.text}</span>
           </div>
         </div>
       )}
 
-      {/* Weekly form summary */}
+      {/* Weekly averages */}
       {weekSummary&&(
-        <div style={{marginBottom:12}}>
-          <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:13,letterSpacing:1,color:C.textMute,textTransform:"uppercase",margin:"0 2px 8px"}}>This Week's Averages</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-            {weekSummary.weight.this!=null&&miniStat("Weight",<>{weekSummary.weight.this}<span style={{fontSize:11,fontWeight:500}}>kg</span></>,delta(weekSummary.weight.this,weekSummary.weight.last,"kg",true),C.orange)}
-            {weekSummary.kcal.this!=null&&miniStat("Calories",<>{Math.round(weekSummary.kcal.this).toLocaleString()}</>,kcalTarget?<span style={{color:Math.round(weekSummary.kcal.this)<=kcalTarget?C.green:C.red}}>target {kcalTarget.toLocaleString()}</span>:delta(weekSummary.kcal.this,weekSummary.kcal.last,"",true),C.blue)}
-            {weekSummary.steps.this!=null&&miniStat("Steps",<>{Math.round(weekSummary.steps.this).toLocaleString()}</>,stepsTarget?<span style={{color:Math.round(weekSummary.steps.this)>=stepsTarget?C.green:C.red}}>target {stepsTarget.toLocaleString()}</span>:delta(weekSummary.steps.this,weekSummary.steps.last,"",false),C.green)}
-            {weekSummary.sleep.this!=null&&miniStat("Sleep",<>{Math.round(weekSummary.sleep.this*10)/10}<span style={{fontSize:11,fontWeight:500}}>h</span></>,delta(weekSummary.sleep.this,weekSummary.sleep.last,"h",false),C.gold)}
+        <>
+          <div style={{fontSize:13,fontWeight:600,color:C.textMute,margin:"6px 8px 8px"}}>This week's averages</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10,marginBottom:12}}>
+            {weekSummary.weight.this!=null&&miniStat("Weight",<>{Math.round(weekSummary.weight.this*10)/10}<span style={{fontSize:13,fontWeight:600,color:C.textMute}}> kg</span></>,delta(weekSummary.weight.this,weekSummary.weight.last,"kg",true))}
+            {weekSummary.kcal.this!=null&&miniStat("Calories",<>{Math.round(weekSummary.kcal.this).toLocaleString()}</>,kcalTarget?<span style={{color:Math.round(weekSummary.kcal.this)<=kcalTarget?C.green:C.red}}>target {kcalTarget.toLocaleString()}</span>:delta(weekSummary.kcal.this,weekSummary.kcal.last,"",true),kcalTarget?Math.min(1,weekSummary.kcal.this/kcalTarget):null)}
+            {weekSummary.steps.this!=null&&miniStat("Steps",<>{Math.round(weekSummary.steps.this).toLocaleString()}</>,stepsTarget?<span style={{color:Math.round(weekSummary.steps.this)>=stepsTarget?C.green:C.red}}>target {stepsTarget.toLocaleString()}</span>:delta(weekSummary.steps.this,weekSummary.steps.last,"",false),stepsTarget?Math.min(1,weekSummary.steps.this/stepsTarget):null)}
+            {weekSummary.sleep.this!=null&&miniStat("Sleep",<>{Math.round(weekSummary.sleep.this*10)/10}<span style={{fontSize:13,fontWeight:600,color:C.textMute}}> h</span></>,delta(weekSummary.sleep.this,weekSummary.sleep.last,"h",false))}
           </div>
-        </div>
-      )}
-
-      {/* Active plan summary */}
-      {activePlan?(
-        <div style={{...card,padding:"14px",marginBottom:12,background:C.surface}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div>
-              <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Active Plan</div>
-              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:20,color:C.text}}>{activePlan.name}</div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:32,color:C.orange,lineHeight:1}}>WK {currentWeek}</div>
-              <div style={{fontSize:11,color:C.textMute}}>{weeksLeft!=null?`${weeksLeft} wks left`:""}</div>
-            </div>
-          </div>
-          <div style={{display:"flex",gap:8,marginBottom:12}}>
-            <div style={{flex:1,background:C.field,borderRadius:8,padding:"10px",textAlign:"center"}}>
-              <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:0.5,marginBottom:4}}>THIS WEEK VOL</div>
-              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:18,color:C.text}}>{Math.round(thisWeekVol).toLocaleString()}<span style={{fontSize:11,fontWeight:400}}>kg</span></div>
-              {lastWeekVol>0&&<div style={{fontSize:10,color:volDiff>=0?C.green:C.red,marginTop:2}}>{volDiff>=0?"+":""}{Math.round(volDiff).toLocaleString()}kg vs last wk</div>}
-            </div>
-            <div style={{flex:1,background:C.field,borderRadius:8,padding:"10px",textAlign:"center"}}>
-              <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:0.5,marginBottom:4}}>DAYS LOGGED</div>
-              <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:18,color:C.text}}>{Object.keys(planLogs[currentWeek]||{}).filter(k=>!isNaN(k)).length}<span style={{fontSize:11,fontWeight:400}}>/{activePlan.days.length}</span></div>
-              <div style={{fontSize:10,color:C.textMute,marginTop:2}}>this week</div>
-            </div>
-          </div>
-          {nextDayIdx>=0?(
-            <button style={{...btn("primary"),width:"100%",justifyContent:"center",padding:"12px"}} onClick={()=>{onStartSession(nextDayIdx);onGoToToday();}}>
-              Start {activePlan.days[nextDayIdx]?.name}
-            </button>
-          ):(
-            <div style={{textAlign:"center",padding:"8px",fontSize:13,color:C.green,fontWeight:600}}>✓ All sessions logged this week</div>
-          )}
-        </div>
-      ):(
-        <div style={{...card,padding:14,marginBottom:12,textAlign:"center",color:C.textMute,fontSize:13}}>
-          No active plan — go to Plans to set one up
-        </div>
+        </>
       )}
 
       {/* Most recent PB */}
       {recentPbRow&&(
-        <div style={{...card,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
-          <div style={{fontSize:24,flexShrink:0}}>🏆</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:10,color:C.textMute,fontWeight:700,letterSpacing:0.5,marginBottom:2}}>MOST RECENT PB</div>
-            <div style={{fontWeight:600,fontSize:14,color:C.text}}>{exMap[recentPbRow[0]]?.name||recentPbRow[0]}</div>
-            <div style={{fontSize:11,color:C.textMute,marginTop:1}}>{new Date(recentPbRow[1].date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div>
+        <button onClick={()=>onGoTab("pbs")} style={{...card,width:"100%",padding:"14px 16px",display:"flex",alignItems:"center",gap:14,cursor:"pointer",textAlign:"left",fontFamily:"'Inter',system-ui,sans-serif",color:C.text}}>
+          <div style={{width:44,height:44,borderRadius:22,background:C.goldBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
           </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,color:C.orange}}>{recentPbRow[1].weight}<span style={{fontSize:12,fontWeight:400}}>kg</span></div>
-            <div style={{fontSize:11,color:C.textMute}}>{recentPbRow[1].reps} reps</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>Latest PB{recentPbRow[1].date?` · ${new Date(recentPbRow[1].date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}`:""}</div>
+            <div style={{fontSize:17,fontWeight:700,letterSpacing:-0.3,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{exMap[recentPbRow[0]]?.name||recentPbRow[0]} · {recentPbRow[1].weight} × {recentPbRow[1].reps}</div>
           </div>
-        </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.textFaint} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       )}
 
       {/* Daily tip */}
-      <div style={{...card,padding:"14px",marginBottom:4,background:C.orangeBg,border:"1px solid rgba(255,122,46,0.28)"}}>
-        <div style={{fontSize:10,color:C.orange,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-          {"✨"} Coach's Tip of the Day
+      <div style={{...card,padding:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg>
+          {kick("Coach's tip",C.orange)}
         </div>
-        {tipLoading&&<div style={{fontSize:13,color:C.textMute}}>Loading today's tip…</div>}
-        {tip&&!tipLoading&&<div style={{fontSize:14,color:C.text,lineHeight:1.6}}>{tip}</div>}
-        {!tip&&!tipLoading&&!activePlan&&<div style={{fontSize:13,color:C.textMute}}>Set up an active plan to get personalised daily tips.</div>}
+        {tipLoading&&<div style={{fontSize:14,color:C.textMute,marginTop:8}}>Loading today's tip…</div>}
+        {tip&&!tipLoading&&<div style={{fontSize:14,color:C.text,lineHeight:1.55,marginTop:8}}>{tip}</div>}
+        {!tip&&!tipLoading&&!activePlan&&<div style={{fontSize:14,color:C.textMute,marginTop:8}}>Set up an active plan to get personalised daily tips.</div>}
         {!tip&&!tipLoading&&activePlan&&(
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-            <div style={{fontSize:13,color:C.textMute}}>Couldn't load today's tip.</div>
-            <button style={{...btn("ghost"),padding:"6px 14px",fontSize:11,flexShrink:0}} onClick={()=>setTipNonce(n=>n+1)}>↻ Retry</button>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginTop:8}}>
+            <div style={{fontSize:14,color:C.textMute}}>Couldn't load today's tip.</div>
+            <button style={{...btn("ghost"),flexShrink:0}} onClick={()=>setTipNonce(n=>n+1)}>↻ Retry</button>
           </div>
         )}
       </div>
@@ -3168,16 +3200,16 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
       {/* Share app */}
       <button onClick={()=>{
         const url="https://reel-neil-fitness.vercel.app";
-        const msg=`💪 Check out The Reel Neil Fitness app!\n\nTrack your workouts, build training plans, log your lifts, cardio and weight — all in one place.\n\n👉 ${url}\n\n📱 HOW TO INSTALL:\n\niPhone: Open the link in Safari, tap the Share button (square with an arrow), then "Add to Home Screen".\n\nAndroid: Open the link in Chrome, tap the three dots menu, then "Add to Home screen" or "Install app".\n\nThen open it from your home screen like a normal app!`;
+        const msg=`💪 Check out The Reel Neil Fitness app!\n\nTrack your workouts, build training plans, log your lifts, cardio and weight, all in one place.\n\n👉 ${url}\n\n📱 HOW TO INSTALL:\n\niPhone: Open the link in Safari, tap the Share button (square with an arrow), then "Add to Home Screen".\n\nAndroid: Open the link in Chrome, tap the three dots menu, then "Add to Home screen" or "Install app".\n\nThen open it from your home screen like a normal app!`;
         const waUrl=`https://wa.me/?text=${encodeURIComponent(msg)}`;
         if(navigator.share){
           navigator.share({title:"The Reel Neil Fitness",text:msg}).catch(()=>{window.open(waUrl,"_blank");});
         } else {
           window.open(waUrl,"_blank");
         }
-      }} style={{width:"100%",marginTop:12,padding:"13px",borderRadius:10,border:"none",cursor:"pointer",background:"#25D366",color:"white",fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:15,letterSpacing:0.5,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-        <svg viewBox="0 0 24 24" fill="white" style={{width:18,height:18}}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/></svg>
-        Share App with Friends
+      }} style={{...btn("ghost"),width:"100%",justifyContent:"center",height:52,marginTop:4,gap:10}}>
+        <svg viewBox="0 0 24 24" fill="#25D366" style={{width:18,height:18}} aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/></svg>
+        Share the app with friends
       </button>
 
     </div>
