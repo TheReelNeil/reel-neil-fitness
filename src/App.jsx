@@ -1808,6 +1808,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   initAdded.forEach(id=>{if(!initSets[id])initSets[id]=savedDraft?.sets?.[id]||existing[id]||newRowsFor(id);});
   // What was added last time this day was trained (most recent non-skipped week), to offer again
   const lastAdded=(()=>{for(let w=week-1;w>=1;w--){const d=planLogsAll[w]?.[dayIdx];if(!d||d._skipped)continue;return planLogsAll[w]?.[`${dayIdx}_added`]?.ids||[];}return [];})();
+  // Swaps made last time this day was trained, to offer again ({originalId: newId})
+  const lastSwaps=(()=>{for(let w=week-1;w>=1;w--){const d=planLogsAll[w]?.[dayIdx];if(!d||d._skipped)continue;return planLogsAll[w]?.[`${dayIdx}_swaps`]||{};}return {};})();
   const initNotes=savedDraft?.notes||(logs?.[plan.id]?.[week]?.[`${dayIdx}_notes`]||"");
   const [sets,setSets]=useState(initSets);
   const [newPbIds,setNewPbIds]=useState(new Set());
@@ -1840,6 +1842,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   const [swapBrowse,setSwapBrowse]=useState(false);
   const [addedIds,setAddedIds]=useState(initAdded);
   const [dismissedSugg,setDismissedSugg]=useState([]);
+  const [dismissedSwap,setDismissedSwap]=useState([]);
   const [addingEx,setAddingEx]=useState(false);
   const [addSearch,setAddSearch]=useState("");
   const sessionExercises=[...day.exercises,...addedIds.map(id=>({exerciseId:id,setConfigs:[{sets:3,repsRange:"",note:""}],added:true}))];
@@ -1919,8 +1922,27 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
     setSwapLoading(false);
   };
 
+  // "Do the same as last week?" Yes: put the new exercise into the plan for good,
+  // keeping the set scheme, and set it up for today with last time's weights.
+  const keepSwapInPlan=(originalId,newId)=>{
+    const origEx=day.exercises.find(e=>e.exerciseId===originalId);
+    if(!origEx)return;
+    const total=origEx.setConfigs?.reduce((m,c)=>m+(parseInt(c.sets)||0),0)||3;
+    let newSets=sets;
+    if(!sets[newId]){
+      const prevN=getPrevForExercise(newId);
+      prevByExercise[newId]=prevN;
+      newSets={...sets,[newId]:Array(total).fill(null).map((_,si)=>({weight:prevN.fromOtherBlock?"":(prevN[si]?.weight||""),reps:"",carriedOver:!prevN.fromOtherBlock&&!!(prevN[si]?.weight)}))};
+      setSets(newSets);
+    }
+    saveDraft(newSets,sessionNotes);
+    onReorder&&onReorder(day.exercises.map(e=>e.exerciseId===originalId?{...e,exerciseId:newId}:e));
+  };
   const confirmSwap=(newId)=>{
-    const originalId=swappingEx.originalId;
+    applySwap(swappingEx.originalId,newId);
+    setSwappingEx(null);setSwapSuggestions([]);setSwapBrowse(false);
+  };
+  const applySwap=(originalId,newId)=>{
     const newSwaps={...swappedExercises,[originalId]:newId};
     setSwappedExercises(newSwaps);
     // Initialise sets for the new exercise if not already logged this session —
@@ -1939,7 +1961,6 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
       setSets(newSets);
     }
     saveDraft(newSets,sessionNotes,newSwaps);
-    setSwappingEx(null);setSwapSuggestions([]);setSwapBrowse(false);
   };
   const handleSave=async()=>{
     const base={...pbs};const np={...pbs};const tr=new Set();
@@ -2077,6 +2098,16 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
               <svg width="20" height="20" viewBox="0 0 24 24" fill={C.text} aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
             </button>
           </div>
+          {(()=>{const to=lastSwaps[ex.exerciseId];
+            if(ex.added||isSwapped||!to||!exMap[to]||inSessionIds.has(to)||dismissedSwap.includes(ex.exerciseId))return null;
+            return(<div style={{marginTop:12,padding:"10px 12px",borderRadius:18,background:C.orangeBg,border:"1px solid rgba(255,122,46,0.3)"}}>
+              <div style={{fontSize:13,color:C.text,lineHeight:1.4}}>Last week you swapped this for <b>{exMap[to].name}</b>. Do the same?</div>
+              <div style={{fontSize:12,color:C.textMute,marginTop:2}}>Yes saves it to your plan for future weeks.</div>
+              <div style={{display:"flex",gap:8,marginTop:8}}>
+                <button onClick={()=>keepSwapInPlan(ex.exerciseId,to)} style={{...pill,flex:1,height:38,background:C.orange,color:C.ink,border:"none",fontSize:13,fontWeight:700}}>Yes, save it</button>
+                <button onClick={()=>setDismissedSwap(d=>[...d,ex.exerciseId])} style={{...pill,flex:1,height:38,fontSize:13}}>No</button>
+              </div>
+            </div>);})()}
           {(prevVol>0||curVol>0)&&<div style={{marginTop:12,fontSize:13,fontWeight:600,display:"flex",flexWrap:"wrap",gap:"2px 6px",alignItems:"baseline"}}>
             <span style={{color:C.textMute,fontSize:11,fontWeight:700,letterSpacing:0.5}}>VOLUME</span>
             <span style={{color:C.text}}>{curVol.toLocaleString("en-GB")}kg</span>
