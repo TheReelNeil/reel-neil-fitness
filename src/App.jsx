@@ -126,8 +126,72 @@ const DEFAULT_EXERCISES = [
   {id:"n56",muscle:"Forearms",name:"Wrist Roller"},{id:"n57",muscle:"Forearms",name:"Dead Hang"},
 ];
 const MUSCLES = [...new Set(DEFAULT_EXERCISES.map(e=>e.muscle))];
-const C={bg:"#07070a",surface:"#141419",surfaceAlt:"#1b1b21",field:"rgba(255,255,255,0.07)",line:"rgba(255,255,255,0.10)",lineStrong:"rgba(255,255,255,0.18)",text:"#f5f5f7",textMute:"#a7a7b0",textFaint:"#8a8a94",onDark:"#0b0b0f",ink:"#160900",orange:"#ff7a2e",orangeBg:"rgba(255,122,46,0.16)",green:"#30d158",greenBg:"rgba(48,209,88,0.15)",gold:"#ffd60a",goldBg:"rgba(255,214,10,0.12)",blue:"#64d2ff",blueBg:"rgba(100,210,255,0.14)",red:"#ff453a",redBg:"rgba(255,69,58,0.14)",glass:"rgba(255,255,255,0.065)",glassBorder:"rgba(255,255,255,0.12)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.16)"};
-const MC = {Chest:"#ff8a65",Back:"#40d9c0",Shoulders:"#ffb340",Biceps:"#ff6fa8",Triceps:"#ff9f45",Quads:"#30d158",Hamstrings:"#64a8ff",Glutes:"#ffd60a",Adductors:"#d283ff",Calves:"#a9bccf",Core:"#f0c040",Traps:"#5ac8fa",Forearms:"#e8a868"};
+// ─── Theme ───────────────────────────────────────────────────────────────────
+// Two palettes with the same keys. C and MC are filled from the active one and the
+// shared styles below are rebuilt by applyTheme(), so switching re-renders live.
+// The choice is kept per device in localStorage ("rnf:theme"); dark is the default.
+const PALETTES={
+  dark:{bg:"#07070a",surface:"#141419",surfaceAlt:"#1b1b21",field:"rgba(255,255,255,0.07)",line:"rgba(255,255,255,0.10)",lineStrong:"rgba(255,255,255,0.18)",text:"#f5f5f7",textMute:"#a7a7b0",textFaint:"#8a8a94",onDark:"#0b0b0f",ink:"#160900",orange:"#ff7a2e",orangeBg:"rgba(255,122,46,0.16)",green:"#30d158",greenBg:"rgba(48,209,88,0.15)",gold:"#ffd60a",goldBg:"rgba(255,214,10,0.12)",blue:"#64d2ff",blueBg:"rgba(100,210,255,0.14)",red:"#ff453a",redBg:"rgba(255,69,58,0.14)",glass:"rgba(255,255,255,0.065)",glassBorder:"rgba(255,255,255,0.12)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.16)",navOn:"#ffa36b",navOff:"#d1d1d6",purple:"#bf5af2",bgRgb:"7,7,10",hero:"rgba(255,255,255,0.07)",heroBorder:"rgba(255,255,255,0.14)"},
+  light:{bg:"#f2f2f6",surface:"#ffffff",surfaceAlt:"#f7f7fa",field:"rgba(20,20,30,0.05)",line:"rgba(20,20,30,0.09)",lineStrong:"rgba(20,20,30,0.16)",text:"#16161a",textMute:"#5c5c66",textFaint:"#74747e",onDark:"#ffffff",ink:"#160900",orange:"#ea6215",orangeBg:"rgba(234,98,21,0.12)",green:"#1e9a52",greenBg:"rgba(30,154,82,0.12)",gold:"#b38300",goldBg:"rgba(179,131,0,0.12)",blue:"#1c7cd0",blueBg:"rgba(28,124,208,0.12)",red:"#dc3328",redBg:"rgba(220,51,40,0.10)",glass:"rgba(255,255,255,0.74)",glassBorder:"rgba(20,20,30,0.08)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(20,20,40,0.05)",navOn:"#d9560c",navOff:"#55555f",purple:"#9b3fd1",bgRgb:"242,242,246",hero:"rgba(255,255,255,0.86)",heroBorder:"rgba(20,20,30,0.07)"},
+};
+const MC_PAL={
+  dark:{Chest:"#ff8a65",Back:"#40d9c0",Shoulders:"#ffb340",Biceps:"#ff6fa8",Triceps:"#ff9f45",Quads:"#30d158",Hamstrings:"#64a8ff",Glutes:"#ffd60a",Adductors:"#d283ff",Calves:"#a9bccf",Core:"#f0c040",Traps:"#5ac8fa",Forearms:"#e8a868"},
+  light:{Chest:"#d9542f",Back:"#0f9580",Shoulders:"#c97f00",Biceps:"#d23a78",Triceps:"#d4680c",Quads:"#1e9a52",Hamstrings:"#2d6bd2",Glutes:"#a87d00",Adductors:"#9d47d2",Calves:"#5b6f82",Core:"#a87e00",Traps:"#1786bb",Forearms:"#ad6a32"},
+};
+const THEME_KEY="rnf:theme";
+let THEME=(()=>{try{return localStorage.getItem(THEME_KEY)==="light"?"light":"dark";}catch{return "dark";}})();
+const C={};const MC={};
+// Theme aware stand ins for rgba() values that were hard coded for the dark look.
+const W=a=>THEME==="light"?`rgba(20,20,30,${+(a*0.75).toFixed(3)})`:`rgba(255,255,255,${a})`; // tints: lines, fields, chips
+const S=a=>THEME==="light"?`rgba(20,20,40,${+(a*0.3).toFixed(3)})`:`rgba(0,0,0,${a})`;      // drop shadows and dark wells
+const K=a=>THEME==="light"?`rgba(10,10,20,${+(a*0.55).toFixed(3)})`:`rgba(0,0,0,${a})`;     // scrims behind sheets
+const P=(rgb,a)=>THEME==="light"?`rgba(252,252,254,${Math.max(a,0.82)})`:`rgba(${rgb},${a})`; // frosted panels
+const B=a=>`rgba(${C.bgRgb},${a})`;                                                       // page background fades
+let css,GLOW,base,inp,setInp,card,lbl,h1,segWrap,chip;
+function buildStyles(){
+css=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);}
+html{height:100%;overflow:hidden;background:${C.bg};}
+body{background:${C.bg};color:${C.text};font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.4;overscroll-behavior:none;position:fixed;inset:0;width:100%;overflow:hidden;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:${C.lineStrong};border-radius:2px;}
+input,select{font-family:'Inter',system-ui,sans-serif;font-size:15px;outline:none;color:${C.text};}
+input[type=number]::-webkit-inner-spin-button{opacity:1;}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`;
+
+// Fixed shell sized by a JS-measured viewport height (--appH, set in App root) —
+// iOS standalone PWAs misreport the bottom edge, so we measure rather than anchor.
+GLOW=THEME==="light"?`radial-gradient(circle at 95% 0%, rgba(255,122,46,0.20), transparent 40%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.09), transparent 42%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.10), transparent 44%), ${C.bg}`:`radial-gradient(circle at 95% 0%, rgba(255,106,26,0.42), transparent 38%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.20), transparent 40%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.14), transparent 42%), ${C.bg}`;
+base={display:"flex",flexDirection:"column",position:"fixed",top:"var(--appTop, 0px)",left:0,right:0,height:"var(--appH, 100dvh)",maxWidth:480,margin:"0 auto",background:GLOW,overflow:"hidden"};
+inp={background:C.field,border:`1px solid ${C.line}`,borderRadius:14,padding:"12px 14px",color:C.text,width:"100%",fontSize:16,boxSizing:"border-box"};
+setInp={background:C.field,border:"1px solid transparent",borderRadius:21,padding:"10px 6px",height:42,color:C.text,textAlign:"center",width:"100%",fontSize:18,fontWeight:700,fontVariantNumeric:"tabular-nums"};
+card={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:24,marginBottom:12,overflow:"hidden",boxShadow:C.glassHi,backdropFilter:"blur(22px) saturate(170%)",WebkitBackdropFilter:"blur(22px) saturate(170%)"};
+lbl={fontSize:13,fontWeight:600,color:C.textMute,display:"block",marginBottom:6};
+h1={fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:30,letterSpacing:-1,lineHeight:1.15,color:C.text};
+segWrap={display:"flex",gap:4,padding:4,borderRadius:999,background:W(0.06),border:`1px solid ${W(0.08)}`};
+chip={fontSize:12,fontWeight:600,background:W(0.08),borderRadius:12,padding:"5px 10px",color:C.text};
+}
+const themeListeners=new Set();
+function applyTheme(t){
+  THEME=t==="light"?"light":"dark";
+  Object.assign(C,PALETTES[THEME]);Object.assign(MC,MC_PAL[THEME]);buildStyles();
+  try{
+    document.getElementById("rnf-theme-boot")?.remove();
+    document.documentElement.style.background=C.bg;if(document.body)document.body.style.background=C.bg;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content",C.bg);
+    document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.setAttribute("content",THEME==="light"?"default":"black");
+  }catch{}
+}
+applyTheme(THEME);
+function setTheme(t){applyTheme(t);try{localStorage.setItem(THEME_KEY,THEME);}catch{}themeListeners.forEach(f=>f(THEME));}
+function useTheme(){const [t,setT]=useState(THEME);useEffect(()=>{themeListeners.add(setT);return()=>{themeListeners.delete(setT);};},[]);return t;}
+const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"11px 18px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,letterSpacing:0,minHeight:44,
+  ...(v==="primary"?{background:C.orange,color:C.ink,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.4)"}:v==="ghost"?{background:C.field,color:C.text,border:`1px solid ${C.line}`}:v==="danger"?{background:C.redBg,color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
+const pillS=(on,col=C.orange)=>({flexShrink:0,height:34,padding:"0 14px",borderRadius:999,border:`1px solid ${on?col+"88":W(0.10)}`,background:on?col+"26":W(0.06),color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:on?700:600,cursor:"pointer",whiteSpace:"nowrap"});
+const segBtn=on=>({flex:1,height:36,borderRadius:999,border:"none",background:on?(THEME==="light"?"#ffffff":"rgba(255,255,255,0.16)"):"transparent",color:on?C.text:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:14,fontWeight:on?700:600,cursor:"pointer",boxShadow:on?"inset 0 1px 0 rgba(255,255,255,0.18)":"none",whiteSpace:"nowrap",padding:"0 6px"});
+const tgl=(on,col=C.orange)=>({flex:1,minHeight:44,padding:"8px 6px",borderRadius:16,border:`1px solid ${on?col+"88":C.line}`,background:on?col+"26":C.field,color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",lineHeight:1.2});
+const statBox=(color=C.orange)=>({background:C.glass,border:`1px solid ${color}33`,borderRadius:20,padding:"14px 16px",flex:1,boxShadow:C.glassHi});
 const est1RM = (w,r) => (!w||!r||r<=0)?0:r===1?w:Math.round(w*(1+r/30));
 const today = () => new Date().toISOString().slice(0,10);
 const fmtDate = d => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
@@ -159,34 +223,6 @@ const Ic = {
 };
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
-const css=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);}
-html{height:100%;overflow:hidden;background:${C.bg};}
-body{background:${C.bg};color:${C.text};font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.4;overscroll-behavior:none;position:fixed;inset:0;width:100%;overflow:hidden;}
-::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:${C.lineStrong};border-radius:2px;}
-input,select{font-family:'Inter',system-ui,sans-serif;font-size:15px;outline:none;color:${C.text};}
-input[type=number]::-webkit-inner-spin-button{opacity:1;}
-@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`;
-
-// Fixed shell sized by a JS-measured viewport height (--appH, set in App root) —
-// iOS standalone PWAs misreport the bottom edge, so we measure rather than anchor.
-const GLOW=`radial-gradient(circle at 95% 0%, rgba(255,106,26,0.42), transparent 38%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.20), transparent 40%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.14), transparent 42%), ${C.bg}`;
-const base={display:"flex",flexDirection:"column",position:"fixed",top:"var(--appTop, 0px)",left:0,right:0,height:"var(--appH, 100dvh)",maxWidth:480,margin:"0 auto",background:GLOW,overflow:"hidden"};
-const inp={background:C.field,border:`1px solid ${C.line}`,borderRadius:14,padding:"12px 14px",color:C.text,width:"100%",fontSize:16,boxSizing:"border-box"};
-const setInp={background:C.field,border:"1px solid transparent",borderRadius:21,padding:"10px 6px",height:42,color:C.text,textAlign:"center",width:"100%",fontSize:18,fontWeight:700,fontVariantNumeric:"tabular-nums"};
-const card={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:24,marginBottom:12,overflow:"hidden",boxShadow:C.glassHi,backdropFilter:"blur(22px) saturate(170%)",WebkitBackdropFilter:"blur(22px) saturate(170%)"};
-const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"11px 18px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,letterSpacing:0,minHeight:44,
-  ...(v==="primary"?{background:C.orange,color:C.ink,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.4)"}:v==="ghost"?{background:C.field,color:C.text,border:`1px solid ${C.line}`}:v==="danger"?{background:C.redBg,color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
-const lbl={fontSize:13,fontWeight:600,color:C.textMute,display:"block",marginBottom:6};
-const h1={fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:30,letterSpacing:-1,lineHeight:1.15,color:C.text};
-const pillS=(on,col=C.orange)=>({flexShrink:0,height:34,padding:"0 14px",borderRadius:999,border:`1px solid ${on?col+"88":"rgba(255,255,255,0.10)"}`,background:on?col+"26":"rgba(255,255,255,0.06)",color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:on?700:600,cursor:"pointer",whiteSpace:"nowrap"});
-const segWrap={display:"flex",gap:4,padding:4,borderRadius:999,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)"};
-const segBtn=on=>({flex:1,height:36,borderRadius:999,border:"none",background:on?"rgba(255,255,255,0.16)":"transparent",color:on?C.text:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:14,fontWeight:on?700:600,cursor:"pointer",boxShadow:on?"inset 0 1px 0 rgba(255,255,255,0.18)":"none",whiteSpace:"nowrap",padding:"0 6px"});
-const tgl=(on,col=C.orange)=>({flex:1,minHeight:44,padding:"8px 6px",borderRadius:16,border:`1px solid ${on?col+"88":C.line}`,background:on?col+"26":C.field,color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",lineHeight:1.2});
-const chip={fontSize:12,fontWeight:600,background:"rgba(255,255,255,0.08)",borderRadius:12,padding:"5px 10px",color:C.text};
-const statBox=(color=C.orange)=>({background:C.glass,border:`1px solid ${color}33`,borderRadius:20,padding:"14px 16px",flex:1,boxShadow:C.glassHi});
 
 function MuscleChip({muscle}){return <span style={{fontSize:11,background:(MC[muscle]||C.textMute)+"22",color:MC[muscle]||C.textMute,padding:"3px 9px",borderRadius:10,fontWeight:600,letterSpacing:0.2}}>{muscle}</span>;}
 function MuscleFilter({active,onChange}){return(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>{["All",...MUSCLES].map(m=><button key={m} onClick={()=>onChange(m)} style={pillS(active===m,MC[m]||C.orange)}>{m}</button>)}</div>);}
@@ -195,6 +231,7 @@ function SectionHead({label}){return <div style={{fontWeight:700,fontSize:16,let
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App(){
+  useTheme(); // re-render everything when the theme is switched
   const [session,setSession]=useState(null);
   const [booting,setBooting]=useState(true);
   useEffect(()=>{try{if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});}catch{}},[]);
@@ -278,7 +315,7 @@ function AuthScreen({onAuth}){
             <span style={{fontSize:12,fontWeight:700,color:"white",letterSpacing:0.5,fontFamily:"'Inter',system-ui,sans-serif"}}>{"@the_reel_neil"}</span>
           </a>
         </div>
-        <div style={{display:"flex",background:C.surface,border:"1px solid rgba(255,255,255,0.10)",borderRadius:8,marginBottom:22,padding:3}}>
+        <div style={{display:"flex",background:C.surface,border:`1px solid ${W(0.10)}`,borderRadius:8,marginBottom:22,padding:3}}>
           {["login","register"].map(m=><button key={m} onClick={()=>{setMode(m);setError("");}} style={segBtn(mode===m)}>{m==="login"?"Sign in":"Register"}</button>)}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -452,7 +489,7 @@ function MainApp({session,onLogout}){
     ["plans","Plans",nIc(<><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></>)],
     ["pbs","PBs",nIc(<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/>)],
     ["more","More",nIc(<><rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/></>)]];
-  const MORE=[["daily","Daily check-in",Ic.daily,C.green],["calories","Calories",Ic.calories,C.orange],["pics","Progress pics",Ic.camera,C.blue],["cardio","Cardio",Ic.cardio,C.red],["running","Run",Ic.run,C.gold],["exercises","Exercises",Ic.dumbbell,"#bf5af2"]];
+  const MORE=[["daily","Daily check-in",Ic.daily,C.green],["calories","Calories",Ic.calories,C.orange],["pics","Progress pics",Ic.camera,C.blue],["cardio","Cardio",Ic.cardio,C.red],["running","Run",Ic.run,C.gold],["exercises","Exercises",Ic.dumbbell,C.purple]];
   const inMore=MORE.some(m=>m[0]===tab);
 
   return(<><style>{css}</style>
@@ -460,7 +497,7 @@ function MainApp({session,onLogout}){
       <div style={{padding:"12px 16px 10px",paddingTop:"calc(env(safe-area-inset-top, 0px) + 12px)",background:"transparent",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/icon-192.png?v=3" alt="RNF" style={{width:40,height:40,borderRadius:12,flexShrink:0,boxShadow:"0 0 0 1px rgba(255,255,255,0.12)"}}/>
+            <img src="/icon-192.png?v=3" alt="RNF" style={{width:40,height:40,borderRadius:12,flexShrink:0,boxShadow:`0 0 0 1px ${W(0.12)}`}}/>
             <div>
               <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:19,letterSpacing:-0.3,color:C.text,whiteSpace:"nowrap"}}>The Reel Neil</div>
               <div style={{fontSize:12,color:C.textMute,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:150}}>{userName||session.email}</div>
@@ -495,13 +532,13 @@ function MainApp({session,onLogout}){
         {tab==="cardio"   &&<CardioTab data={cardioData} onSave={saveCardioData}/>}
         {tab==="running"  &&<RunningTab data={runData} onSave={saveRunData} cardioData={cardioData} onSaveCardio={saveCardioData}/>}
       </div>
-      <div aria-hidden="true" style={{position:"absolute",left:0,right:0,bottom:0,height:"calc(env(safe-area-inset-bottom, 0px) + 110px)",background:"linear-gradient(to bottom, rgba(7,7,10,0), rgba(7,7,10,0.85) 60%)",pointerEvents:"none",zIndex:55}}/>
-      <nav aria-label="Main" style={{position:"absolute",left:14,right:14,bottom:"calc(env(safe-area-inset-bottom, 0px) + 10px)",height:68,borderRadius:34,background:"rgba(38,38,46,0.62)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",border:"1px solid rgba(255,255,255,0.15)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2), 0 18px 44px rgba(0,0,0,0.6)",display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",alignItems:"center",padding:"0 6px",zIndex:60}}>
+      <div aria-hidden="true" style={{position:"absolute",left:0,right:0,bottom:0,height:"calc(env(safe-area-inset-bottom, 0px) + 110px)",background:`linear-gradient(to bottom, ${B(0)}, ${B(0.85)} 60%)`,pointerEvents:"none",zIndex:55}}/>
+      <nav aria-label="Main" style={{position:"absolute",left:14,right:14,bottom:"calc(env(safe-area-inset-bottom, 0px) + 10px)",height:68,borderRadius:34,background:P("38,38,46",0.62),backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",border:`1px solid ${W(0.15)}`,boxShadow:`inset 0 1px 0 ${W(0.2)}, 0 18px 44px ${S(0.6)}`,display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",alignItems:"center",padding:"0 6px",zIndex:60}}>
         {NAV.map(([id,label,icon])=>{
           const on=id==="more"?(inMore||moreOpen):(tab===id&&!moreOpen);
           return(
             <button key={id} aria-label={label} aria-current={on&&id!=="more"?"page":undefined} onClick={()=>{if(id==="more")setMoreOpen(o=>!o);else{setMoreOpen(false);setTab(id);}}}
-              style={{height:56,margin:"0 2px",borderRadius:28,border:"none",background:on?C.orangeBg:"transparent",color:on?"#ffa36b":"#d1d1d6",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:10,fontWeight:on?700:600,padding:0}}>
+              style={{height:56,margin:"0 2px",borderRadius:28,border:"none",background:on?C.orangeBg:"transparent",color:on?C.navOn:C.navOff,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:10,fontWeight:on?700:600,padding:0}}>
               {icon}<span>{label}</span>
             </button>
           );
@@ -509,13 +546,13 @@ function MainApp({session,onLogout}){
       </nav>
       {moreOpen&&(
         <div role="dialog" aria-label="More" style={{position:"fixed",inset:0,zIndex:58,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
-          <div onClick={()=>setMoreOpen(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}}/>
-          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:"rgba(34,34,40,0.86)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.2), 0 -10px 60px rgba(0,0,0,0.6)",padding:14,animation:"fadeIn .18s ease-out"}}>
+          <div onClick={()=>setMoreOpen(false)} style={{position:"absolute",inset:0,background:K(0.55)}}/>
+          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:P("34,34,40",0.86),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${W(0.14)}`,boxShadow:`inset 0 1px 0 ${W(0.2)}, 0 -10px 60px ${S(0.6)}`,padding:14,animation:"fadeIn .18s ease-out"}}>
             <div style={{fontSize:13,fontWeight:600,color:C.textMute,padding:"2px 6px 10px"}}>More</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
               {MORE.map(([id,label,icon,col])=>(
                 <button key={id} onClick={()=>{setTab(id);setMoreOpen(false);}} aria-current={tab===id?"page":undefined}
-                  style={{height:92,borderRadius:22,border:`1px solid ${tab===id?col+"88":"rgba(255,255,255,0.08)"}`,background:tab===id?col+"1f":"rgba(255,255,255,0.06)",color:C.text,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:600,padding:"0 4px"}}>
+                  style={{height:92,borderRadius:22,border:`1px solid ${tab===id?col+"88":W(0.08)}`,background:tab===id?col+"1f":W(0.06),color:C.text,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:600,padding:"0 4px"}}>
                   <span style={{width:40,height:40,borderRadius:20,background:col+"26",color:col,display:"flex",alignItems:"center",justifyContent:"center"}}>{icon}</span>
                   {label}
                 </button>
@@ -1097,7 +1134,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
                   <XAxis dataKey="name" tick={{fill:C.textMute,fontSize:10}} axisLine={false} tickLine={false}/>
                   <YAxis tick={{fill:C.textMute,fontSize:10}} axisLine={false} tickLine={false} domain={["auto","auto"]} width={44} tickFormatter={v=>v>=10000?`${(v/1000).toFixed(0)}k`:v}/>
                   {refLineY&&<ReferenceLine y={refLineY} stroke={C.green} strokeDasharray="4 4" strokeWidth={1.5}/>}
-                  <Tooltip contentStyle={{background:C.field,border:"1px solid rgba(255,255,255,0.18)",borderRadius:8,color:C.text,fontSize:12}} formatter={v=>[v.toLocaleString(),"Weekly avg"]}/>
+                  <Tooltip contentStyle={{background:C.field,border:`1px solid ${W(0.18)}`,borderRadius:8,color:C.text,fontSize:12}} formatter={v=>[v.toLocaleString(),"Weekly avg"]}/>
                   <Line type="monotone" dataKey="avg" stroke={mColor} strokeWidth={2.5} dot={{fill:mColor,strokeWidth:0,r:3}} activeDot={{r:5}} connectNulls/>
                 </LineChart>
               </ResponsiveContainer>
@@ -1152,7 +1189,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
               const s=(cardioData?.steps||[]).find(x=>x.date===d);
               const flags=[e.trained?"🏋️":null,e.refeed?"🔥":null,e.offPlan?"🍔":null,e.alcohol?"🍺":null].filter(Boolean).join(" ");
               return(
-                <div key={d} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}>
+                <div key={d} style={{display:"flex",alignItems:"center",padding:"9px 14px",borderTop:i===0?"none":`1px solid ${W(0.07)}`}}>
                   <div style={{flex:1,cursor:"pointer"}} onClick={()=>{setDate(d);setView("log");document.getElementById("scroller")?.scrollTo({top:0});}}>
                     <div style={{fontWeight:600,fontSize:13,color:C.text}}>{fmtDate(d)} {flags&&<span style={{fontSize:11}}>{flags}</span>}</div>
                     <div style={{fontSize:11,color:C.textMute,marginTop:1}}>
@@ -1164,7 +1201,7 @@ function DailyTab({dailyLog,onSaveDailyLog,weightData,onSaveWeightData,cardioDat
                 </div>
               );
             })}
-            {histDates.length>10&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllHist(!showAllHist)}>{showAllHist?"Show Less":`Show all ${histDates.length}`}</button></div>}
+            {histDates.length>10&&<div style={{padding:"10px 14px",borderTop:`1px solid ${W(0.07)}`,textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllHist(!showAllHist)}>{showAllHist?"Show Less":`Show all ${histDates.length}`}</button></div>}
           </div>
         </div>
       )}
@@ -1357,7 +1394,7 @@ function PicsTab({token,userId,pics,onSavePics}){
                           <div style={{fontSize:9,fontWeight:700,letterSpacing:0.5,marginTop:3}}>ADD</div>
                         </div>
                       )}
-                      {busy===key&&<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:C.orange}}>UPLOADING…</div>}
+                      {busy===key&&<div style={{position:"absolute",inset:0,background:K(0.6),display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:C.orange}}>UPLOADING…</div>}
                     </div>
                     {path&&(
                       <div style={{display:"flex",gap:4,marginTop:6}}>
@@ -1520,7 +1557,7 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
     {activePlan.days.map((day,i)=>{
       const dayLog=logs?.[activePlan.id]?.[currentWeek]?.[i];
       const vol=dayLog&&!dayLog._skipped?Object.values(dayLog).filter(Array.isArray).reduce((s,sets)=>s+sets.reduce((a,st)=>a+(st.weight*st.reps||0),0),0):0;
-      return(<div key={i} style={{...card,border:dayLog?"1px solid rgba(48,209,88,0.28)":"1px solid rgba(255,255,255,0.10)"}}>
+      return(<div key={i} style={{...card,border:dayLog?"1px solid rgba(48,209,88,0.28)":`1px solid ${W(0.10)}`}}>
         <div style={{padding:"16px 16px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"flex-start",gap:8,flex:1}}>
             <div>
@@ -1668,7 +1705,7 @@ function RestTimer({compact=false}){
   if(compact){
     return(
       <button ref={rootRef} aria-label={mainLabel} onMouseDown={e=>e.preventDefault()} onClick={toggle}
-        style={{height:40,padding:"0 12px 0 6px",borderRadius:20,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.85)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 8px 24px rgba(0,0,0,0.5)`,display:"flex",alignItems:"center",gap:6,cursor:"pointer",color:done?C.red:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:15,fontWeight:750,fontVariantNumeric:"tabular-nums"}}>
+        style={{height:40,padding:"0 12px 0 6px",borderRadius:20,border:`1px solid ${done?C.red:C.glassBorder}`,background:P("40,40,48",0.85),backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 8px 24px ${S(0.5)}`,display:"flex",alignItems:"center",gap:6,cursor:"pointer",color:done?C.red:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:15,fontWeight:750,fontVariantNumeric:"tabular-nums"}}>
         {ring(28,5)}
         {done?"GO!":running?fmt(timeLeft):`Rest ${lenLabel(duration)}`}
       </button>
@@ -1677,7 +1714,7 @@ function RestTimer({compact=false}){
   return(
     <div ref={rootRef} style={{position:"relative",flexShrink:0}}>
       {expanded&&(
-        <div role="dialog" aria-label="Rest length" style={{position:"absolute",bottom:72,right:0,width:260,background:"rgba(30,30,36,0.95)",backdropFilter:"blur(36px) saturate(180%)",WebkitBackdropFilter:"blur(36px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderRadius:28,padding:14,boxShadow:`${C.glassHi}, 0 16px 44px rgba(0,0,0,0.6)`}}>
+        <div role="dialog" aria-label="Rest length" style={{position:"absolute",bottom:72,right:0,width:260,background:P("30,30,36",0.95),backdropFilter:"blur(36px) saturate(180%)",WebkitBackdropFilter:"blur(36px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderRadius:28,padding:14,boxShadow:`${C.glassHi}, 0 16px 44px ${S(0.6)}`}}>
           <div style={{fontSize:13,fontWeight:600,color:C.textMute,marginBottom:10}}>Rest length</div>
           <div style={{display:"flex",gap:6}}>
             {PRESETS.map(p=>(
@@ -1695,7 +1732,7 @@ function RestTimer({compact=false}){
           </div>
         </div>
       )}
-      <div style={{height:60,borderRadius:30,border:`1px solid ${done?C.red:C.glassBorder}`,background:"rgba(40,40,48,0.92)",backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 16px 40px rgba(0,0,0,0.55)`,display:"flex",alignItems:"center",overflow:"hidden"}}>
+      <div style={{height:60,borderRadius:30,border:`1px solid ${done?C.red:C.glassBorder}`,background:P("40,40,48",0.92),backdropFilter:"blur(30px) saturate(180%)",WebkitBackdropFilter:"blur(30px) saturate(180%)",boxShadow:`${C.glassHi}, 0 16px 40px ${S(0.55)}`,display:"flex",alignItems:"center",overflow:"hidden"}}>
         <button aria-label={mainLabel} onClick={toggle} style={{height:"100%",padding:"0 10px 0 8px",border:"none",background:"none",display:"flex",alignItems:"center",gap:10,cursor:"pointer",color:C.text,fontFamily:"'Inter',system-ui,sans-serif"}}>
           {ring(44,4)}
           <span style={{textAlign:"left",minWidth:52}}>
@@ -2022,7 +2059,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   };
   const keepPb=p=>{onSavePbs({...pbs,[p.id]:{weight:p.weight,reps:p.reps,date:p.date}});setPendingPbs(l=>l.filter(x=>x.id!==p.id));setNewPbIds(n=>new Set(n).add(p.id));};
   const discardPb=id=>setPendingPbs(l=>l.filter(x=>x.id!==id));
-  const glassCard={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:30,boxShadow:`${C.glassHi}, 0 20px 50px rgba(0,0,0,0.45)`,backdropFilter:"blur(28px) saturate(180%)",WebkitBackdropFilter:"blur(28px) saturate(180%)"};
+  const glassCard={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:30,boxShadow:`${C.glassHi}, 0 20px 50px ${S(0.45)}`,backdropFilter:"blur(28px) saturate(180%)",WebkitBackdropFilter:"blur(28px) saturate(180%)"};
   const pill={border:`1px solid ${C.line}`,background:C.field,color:C.text,borderRadius:999,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:650,fontSize:14};
   const iconBtn={width:42,height:42,borderRadius:21,border:"none",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.text,padding:0};
   const svgI=(d,col)=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -2124,7 +2161,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
           <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:6}}>
           {exSets.map((s,si)=>{const lbl=labels[si],p=prevSets[si],isDone=!!(s.weight&&s.reps),isCur=si===firstOpen;return(
             <div key={si} style={{display:"grid",gridTemplateColumns:"36px minmax(0,1fr) minmax(0,1fr) 62px",gap:6,alignItems:"center",minHeight:54,padding:"5px 6px",borderRadius:27,
-              background:isDone?"rgba(48,209,88,0.08)":isCur?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.03)",
+              background:isDone?"rgba(48,209,88,0.08)":isCur?W(0.08):W(0.03),
               border:isDone?"1px solid rgba(48,209,88,0.22)":isCur?`1.5px solid ${C.orange}`:`1px solid ${C.line}`,
               boxShadow:isCur?"0 0 0 4px rgba(255,122,46,0.10)":"none"}}>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
@@ -2136,15 +2173,15 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
               <input type="number" inputMode="decimal" min="0" step="0.5" placeholder="kg" value={s.weight} aria-label={`Set ${si+1} weight in kg`}
                 onFocus={ev=>ev.target.select()}
                 onChange={ev=>updateSet(activeId,si,"weight",ev.target.value)}
-                style={{...setInp,background:isDone?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.09)",color:s.carriedOver&&!s._edited?C.gold:C.text}}/>
+                style={{...setInp,background:isDone?W(0.05):W(0.09),color:s.carriedOver&&!s._edited?C.gold:C.text}}/>
               <input type="number" inputMode="numeric" min="0" placeholder="reps" value={s.reps} aria-label={`Set ${si+1} reps`}
                 onFocus={ev=>ev.target.select()}
                 onChange={ev=>updateSet(activeId,si,"reps",ev.target.value)}
-                style={{...setInp,background:isDone?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.09)",border:isCur&&s.weight&&!s.reps?`1.5px solid ${C.orange}99`:"1px solid transparent"}}/>
+                style={{...setInp,background:isDone?W(0.05):W(0.09),border:isCur&&s.weight&&!s.reps?`1.5px solid ${C.orange}99`:"1px solid transparent"}}/>
               <div style={{textAlign:"right",paddingRight:8,fontSize:13,color:prevSets.fromOtherBlock?C.textFaint:C.textMute,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{p?.weight?`${p.weight}×${p.reps||"–"}`:"–"}</div>
             </div>);})}
           </div>
-          <button onClick={()=>addExtraSet(activeId)} style={{...pill,width:"100%",height:46,marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:C.textMute,background:"rgba(255,255,255,0.04)"}}>{Ic.plus}Add set</button>
+          <button onClick={()=>addExtraSet(activeId)} style={{...pill,width:"100%",height:46,marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:C.textMute,background:W(0.04)}}>{Ic.plus}Add set</button>
         </div>);
       })}
       <div style={{padding:"14px 12px 0"}}>
@@ -2176,7 +2213,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
       </div>
     </div>
     <div style={{position:"absolute",left:typing?"auto":12,right:12,bottom:typing?8:"calc(env(safe-area-inset-bottom, 0px) + 12px)",display:"flex",gap:10,alignItems:"center",justifyContent:"flex-end",zIndex:50,pointerEvents:"none"}}>
-      {!typing&&<button onClick={handleSave} style={{pointerEvents:"auto",flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?"rgba(40,40,48,0.78)":C.orange,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>}
+      {!typing&&<button onClick={handleSave} style={{pointerEvents:"auto",flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?P("40,40,48",0.78):C.orange,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>}
       <div style={{pointerEvents:"auto"}}><RestTimer compact={typing}/></div>
     </div>
     {exerciseInfo&&<ExerciseInfoPanel name={exerciseInfo.name} muscle={exerciseInfo.muscle} onClose={()=>setExerciseInfo(null)}/>}
@@ -2187,8 +2224,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
         <span style={{width:34,height:34,borderRadius:11,background:tint,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</span><span style={{flex:1}}>{label}</span></button>);
       const move=dir=>{if(moveExercise(mpi,dir))setMenuFor(m=>({...m,pi:mpi+dir}));};
       return(<div style={{position:"fixed",inset:0,zIndex:250,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.55)"}} onClick={close}/>
-        <div role="dialog" aria-label={`${me.name} options`} style={{position:"relative",margin:"0 8px",marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 8px)",borderRadius:34,background:"rgba(30,30,36,0.94)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,boxShadow:`${C.glassHi}, 0 -10px 60px rgba(0,0,0,0.6)`,padding:"10px 14px 16px"}}>
+        <div style={{position:"absolute",inset:0,background:K(0.55)}} onClick={close}/>
+        <div role="dialog" aria-label={`${me.name} options`} style={{position:"relative",margin:"0 8px",marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 8px)",borderRadius:34,background:P("30,30,36",0.94),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,boxShadow:`${C.glassHi}, 0 -10px 60px ${S(0.6)}`,padding:"10px 14px 16px"}}>
           <div style={{width:38,height:5,borderRadius:3,background:C.lineStrong,margin:"0 auto"}}/>
           <div style={{padding:"14px 6px 12px"}}>
             <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:20,fontWeight:750,letterSpacing:-0.5,color:C.text}}>{me.name}</div>
@@ -2197,8 +2234,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
           <div style={{borderRadius:24,background:C.field,border:`1px solid ${C.line}`,overflow:"hidden"}}>
             {!isAdded&&row(svgI(<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>,C.orange),C.orangeBg,"Swap exercise",()=>{close();openSwapSession(menuEx.exerciseId,exMap[menuEx.exerciseId]?.muscle||me.muscle,exMap[menuEx.exerciseId]?.name||me.name);},{first:true})}
             {row(svgI(<><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></>,C.blue),C.blueBg,"How to do it",()=>{close();setExerciseInfo({name:me.name,muscle:me.muscle});},{first:isAdded})}
-            {!isAdded&&planN>1&&row(svgI(<path d="M12 19V5M5 12l7-7 7 7"/>,C.text),"rgba(255,255,255,0.1)","Move up",()=>move(-1),{disabled:mpi===0})}
-            {!isAdded&&planN>1&&row(svgI(<path d="M12 5v14M19 12l-7 7-7-7"/>,C.text),"rgba(255,255,255,0.1)","Move down",()=>move(1),{disabled:mpi===planN-1})}
+            {!isAdded&&planN>1&&row(svgI(<path d="M12 19V5M5 12l7-7 7 7"/>,C.text),W(0.1),"Move up",()=>move(-1),{disabled:mpi===0})}
+            {!isAdded&&planN>1&&row(svgI(<path d="M12 5v14M19 12l-7 7-7-7"/>,C.text),W(0.1),"Move down",()=>move(1),{disabled:mpi===planN-1})}
             {isAdded&&row(svgI(<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>,C.red),C.redBg,"Remove from today",()=>{close();removeAdded(mid);},{danger:true})}
           </div>
           {!isAdded&&planN>1&&<div style={{fontSize:12,color:C.textMute,textAlign:"center",margin:"10px 16px 0",lineHeight:1.4}}>Moving an exercise keeps that order for every week of this plan.</div>}
@@ -2210,8 +2247,8 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
       const list=Object.values(exMap).filter(e=>!inSessionIds.has(e.id)&&(!q||e.name.toLowerCase().includes(q)||(e.muscle||"").toLowerCase().includes(q)))
         .sort((a,b)=>(a.muscle||"").localeCompare(b.muscle||"")||a.name.localeCompare(b.name));
       return(<div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)"}} onClick={()=>{setAddingEx(false);setAddSearch("");}}/>
-        <div style={{position:"relative",background:"rgba(26,26,32,0.96)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",borderRadius:"34px 34px 0 0",border:`1px solid ${C.glassBorder}`,borderBottom:"none",maxHeight:"82vh",display:"flex",flexDirection:"column",boxShadow:`${C.glassHi}, 0 -10px 60px rgba(0,0,0,0.6)`}}>
+        <div style={{position:"absolute",inset:0,background:K(0.6)}} onClick={()=>{setAddingEx(false);setAddSearch("");}}/>
+        <div style={{position:"relative",background:P("26,26,32",0.96),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",borderRadius:"34px 34px 0 0",border:`1px solid ${C.glassBorder}`,borderBottom:"none",maxHeight:"82vh",display:"flex",flexDirection:"column",boxShadow:`${C.glassHi}, 0 -10px 60px ${S(0.6)}`}}>
           <div style={{padding:"10px 18px 12px",flexShrink:0}}>
             <div style={{width:38,height:5,background:C.lineStrong,borderRadius:3,margin:"0 auto 14px"}}/>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
@@ -2260,7 +2297,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
               <div style={{fontSize:15,fontWeight:750,color:C.gold}}>⚠ Quick check</div>
               <div style={{fontSize:13,color:C.textMute,marginTop:4,lineHeight:1.4}}>{pendingPbs.length>1?"These look high for a new best. Were they real sets?":"This looks high for a new best. Was it a real set?"}</div>
               {pendingPbs.map(p=>(
-                <div key={p.id} style={{marginTop:10,padding:"12px 14px",borderRadius:20,background:"rgba(0,0,0,0.25)"}}>
+                <div key={p.id} style={{marginTop:10,padding:"12px 14px",borderRadius:20,background:S(0.25)}}>
                   <div style={{fontSize:16,fontWeight:700,color:C.text}}>{p.name}</div>
                   <div style={{fontSize:13,color:C.textMute,marginTop:2}}><span style={{color:C.text,fontWeight:700}}>{p.weight}kg × {p.reps} reps</span>{p.prevReps!=null?` · previous best ${p.prevWeight}kg × ${p.prevReps}`:""}</div>
                   <div style={{display:"flex",gap:8,marginTop:12}}>
@@ -2275,7 +2312,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
           {(summaryLoading||summary)&&<div style={{marginTop:12,borderRadius:26,background:C.glass,border:`1px solid ${C.glassBorder}`,boxShadow:C.glassHi,padding:16}}>
             <div style={{fontSize:11,fontWeight:700,letterSpacing:0.6,color:C.orange}}>YOUR DEBRIEF</div>
             {summaryLoading?<div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 0 4px",color:C.textMute,fontSize:14}}>
-              <span style={{display:"inline-block",width:16,height:16,border:"2px solid rgba(255,255,255,0.18)",borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+              <span style={{display:"inline-block",width:16,height:16,border:`2px solid ${W(0.18)}`,borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
               Getting your session debrief…
             </div>:<div style={{fontSize:15,color:C.text,lineHeight:1.6,marginTop:8}}>{summary}</div>}
           </div>}
@@ -2286,9 +2323,9 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
       </div>);})()}
     {swappingEx&&(
       <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.7)"}} onClick={()=>{setSwappingEx(null);setSwapBrowse(false);}}/>
-        <div style={{position:"relative",background:"rgba(26,26,32,0.96)",backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderBottom:"none",borderRadius:"34px 34px 0 0",maxHeight:"82vh",display:"flex",flexDirection:"column",boxShadow:`${C.glassHi}, 0 -10px 60px rgba(0,0,0,0.6)`}}>
-          <div style={{padding:"12px 18px 10px",borderBottom:"1px solid rgba(255,255,255,0.10)",flexShrink:0}}>
+        <div style={{position:"absolute",inset:0,background:K(0.7)}} onClick={()=>{setSwappingEx(null);setSwapBrowse(false);}}/>
+        <div style={{position:"relative",background:P("26,26,32",0.96),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,borderBottom:"none",borderRadius:"34px 34px 0 0",maxHeight:"82vh",display:"flex",flexDirection:"column",boxShadow:`${C.glassHi}, 0 -10px 60px ${S(0.6)}`}}>
+          <div style={{padding:"12px 18px 10px",borderBottom:`1px solid ${W(0.10)}`,flexShrink:0}}>
             <div style={{width:36,height:4,background:C.lineStrong,borderRadius:2,margin:"0 auto 12px"}}/>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div>
@@ -2308,7 +2345,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
                     {swapSuggestions.map((s,i)=>{
                       const e=exMap[s.id];
                       return e?(
-                        <div key={s.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.10)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(s.id)}>
+                        <div key={s.id} style={{padding:"11px 14px",borderTop:i===0?"none":`1px solid ${W(0.10)}`,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(s.id)}>
                           <div style={{flex:1}}>
                             <div style={{fontWeight:600,fontSize:14,color:C.text}}>{e.name}</div>
                             <div style={{fontSize:11,color:C.orange,marginTop:2}}>{s.reason}</div>
@@ -2330,7 +2367,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
                 <button style={{...btn("ghost"),padding:"6px 10px",fontSize:12,marginBottom:12}} onClick={()=>setSwapBrowse(false)}>{Ic.back} Back to Suggestions</button>
                 <div style={card}>
                   {Object.values(exMap).filter(e=>e.muscle===swappingEx.muscle&&e.id!==(swappedExercises[swappingEx.originalId]||swappingEx.originalId)).map((e,i)=>(
-                    <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.10)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(e.id)}>
+                    <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":`1px solid ${W(0.10)}`,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>confirmSwap(e.id)}>
                       <div style={{flex:1,fontWeight:500,fontSize:14,color:C.text}}>{e.name}</div>
                       <span style={{color:C.orange,fontSize:18}}>›</span>
                     </div>
@@ -2358,7 +2395,7 @@ function PlansTab({plans,exercises,activePlanId,exMap,onActivate,onSavePlans}){
       <button style={{...btn("ghost"),flex:1,justifyContent:"center",color:C.blue,border:"1px solid rgba(100,210,255,0.35)",background:C.blueBg}} onClick={()=>setAiBuilding(true)}>{"✨"} AI builder</button>
     </div>
     {plans.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:C.textMute,fontSize:14}}>No plans yet.</div>}
-    {plans.map(p=>(<div key={p.id} style={{...card,border:p.id===activePlanId?"1px solid rgba(48,209,88,0.5)":"1px solid rgba(255,255,255,0.10)"}}>
+    {plans.map(p=>(<div key={p.id} style={{...card,border:p.id===activePlanId?"1px solid rgba(48,209,88,0.5)":`1px solid ${W(0.10)}`}}>
       <div style={{padding:"16px 16px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
         <div style={{minWidth:0}}>{p.id===activePlanId&&<div style={{display:"inline-flex",fontSize:12,color:C.green,fontWeight:700,background:C.greenBg,padding:"3px 10px",borderRadius:999,marginBottom:6}}>✓ Active</div>}
           <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:22,letterSpacing:-0.5,color:C.text}}>{p.name||"Unnamed plan"}</div>
@@ -2400,14 +2437,14 @@ function PlanBuilder({plan:initial,exercises,exMap,onSave,onCancel}){
       <button style={{...btn("ghost"),padding:"7px 12px",fontSize:12}} onClick={addDay}>{Ic.plus} Add Day</button>
     </div>
     {plan.days.map((day,di)=>(<div key={di} style={{...card,marginBottom:12}}>
-      <div style={{padding:"10px 12px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid rgba(255,255,255,0.10)"}}>
+      <div style={{padding:"10px 12px",display:"flex",alignItems:"center",gap:8,borderBottom:`1px solid ${W(0.10)}`}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textMute,fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",letterSpacing:1,minWidth:40}}>DAY {di+1}</div>
         <input style={{...inp,padding:"6px 10px",fontSize:14,flex:1}} value={day.name} onChange={e=>updateDayName(di,e.target.value)}/>
         <button style={{...btn("ghost"),padding:"6px 8px",opacity:di===0?0.3:1}} onClick={()=>moveDay(di,-1)} disabled={di===0}>▲</button>
         <button style={{...btn("ghost"),padding:"6px 8px",opacity:di===plan.days.length-1?0.3:1}} onClick={()=>moveDay(di,1)} disabled={di===plan.days.length-1}>▼</button>
         <button style={{...btn("danger"),padding:"6px 8px"}} onClick={()=>removeDay(di)}>{Ic.x}</button>
       </div>
-      {day.exercises.map((ex,ei)=>{const e=exMap[ex.exerciseId];return(<div key={ei} style={{borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+      {day.exercises.map((ex,ei)=>{const e=exMap[ex.exerciseId];return(<div key={ei} style={{borderBottom:`1px solid ${W(0.07)}`}}>
         <div style={{padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
           <div style={{flex:1}}><div style={{fontWeight:600,fontSize:14,color:C.text}}>{e?.name}</div><MuscleChip muscle={e?.muscle||""}/></div>
           <button style={{...btn("danger"),padding:"5px 7px"}} onClick={()=>removeEx(di,ei)}>{Ic.x}</button>
@@ -2456,7 +2493,7 @@ function ExercisePicker({exercises,existing,onPick,onCancel}){
     <div style={{position:"relative",marginBottom:10}}><div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textMute}}>{Ic.search}</div><input style={{...inp,paddingLeft:34}} placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
     <MuscleFilter active={muscle} onChange={setMuscle}/>
     <div style={card}>
-      {filtered.map((e,i)=>{const already=existing.includes(e.id);return(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",opacity:already?0.4:1,cursor:already?"default":"pointer"}} onClick={()=>!already&&onPick(e.id)}>
+      {filtered.map((e,i)=>{const already=existing.includes(e.id);return(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderTop:i===0?"none":`1px solid ${W(0.07)}`,opacity:already?0.4:1,cursor:already?"default":"pointer"}} onClick={()=>!already&&onPick(e.id)}>
         <div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/>{already?<span style={{fontSize:11,color:C.textMute}}>Added</span>:<span style={{color:C.orange}}>{Ic.plus}</span>}
       </div>);})}
       {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:C.textMute,fontSize:13}}>No exercises found</div>}
@@ -2486,7 +2523,7 @@ function ExercisesTab({exercises,onSave}){
     </div>)}
     {!adding&&<button style={{...btn("ghost"),width:"100%",justifyContent:"center",marginBottom:12}} onClick={()=>setAdding(true)}>{Ic.plus} Add custom exercise</button>}
     <div style={card}>
-      {filtered.map((e,i)=>(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"0 16px",minHeight:50,borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}><div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/></div>))}
+      {filtered.map((e,i)=>(<div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"0 16px",minHeight:50,borderTop:i===0?"none":`1px solid ${W(0.07)}`}}><div style={{width:8,height:8,borderRadius:"50%",background:MC[e.muscle]||C.textMute,flexShrink:0}}/><div style={{flex:1,fontWeight:500,fontSize:15,color:C.text}}>{e.name}</div><MuscleChip muscle={e.muscle}/></div>))}
       {filtered.length===0&&<div style={{padding:20,textAlign:"center",color:C.textMute,fontSize:13}}>No exercises found</div>}
     </div>
     <div style={{fontSize:11,color:C.textMute,textAlign:"center",marginTop:10}}>{exercises.length} exercises in library</div>
@@ -2509,7 +2546,7 @@ function PBsTab({pbs,exMap,onSavePbs}){
     <div style={{fontSize:14,color:C.textMute,marginTop:2,marginBottom:16}}>{entries.length} exercises</div>
     {Object.entries(byMuscle).map(([muscle,list])=>(<div key={muscle} style={{marginBottom:14}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><div style={{width:6,height:6,borderRadius:"50%",background:MC[muscle]||C.textMute}}/><div style={{fontWeight:700,fontSize:14,color:MC[muscle]||C.textMute}}>{muscle}</div></div>
-      <div style={card}>{list.map((e,i)=>{const orm=est1RM(e.weight,e.reps),date=e.date?new Date(e.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";return(<div key={e.id} style={{padding:"12px 12px 12px 16px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10}}>
+      <div style={card}>{list.map((e,i)=>{const orm=est1RM(e.weight,e.reps),date=e.date?new Date(e.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";return(<div key={e.id} style={{padding:"12px 12px 12px 16px",borderTop:i===0?"none":`1px solid ${W(0.07)}`,display:"flex",alignItems:"center",gap:10}}>
         <div style={{flex:1,minWidth:0}}><div style={{fontWeight:650,fontSize:16,color:C.text}}>{e.ex.name}</div><div style={{fontSize:12,color:C.textMute,marginTop:2}}>{date}{date?" · ":""}est {orm}kg 1RM</div></div>
         <div style={{textAlign:"right",flexShrink:0}}><div style={{fontWeight:800,fontSize:20,letterSpacing:-0.5,color:C.text,fontVariantNumeric:"tabular-nums"}}>{e.weight}<span style={{fontSize:12,fontWeight:600,color:C.textMute}}> kg</span></div><div style={{fontSize:12,fontWeight:600,color:C.orange}}>× {e.reps} reps</div></div>
                   <button aria-label={`Delete PB for ${e.ex.name}`} style={{width:36,height:36,borderRadius:18,border:"none",background:"transparent",color:C.textFaint,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} onClick={()=>deletePb(e.id)}>{Ic.trash}</button>
@@ -2575,7 +2612,7 @@ function AIPlanBuilder({exercises,exMap,onSave,onCancel}){
           value={description}
           onChange={e=>setDescription(e.target.value)}
           placeholder="e.g. 4 day upper/lower hypertrophy split, 12 weeks with a deload on week 6, intermediate level, I want to focus on chest and back growth..."
-          style={{background:C.field,border:"1px solid rgba(255,255,255,0.10)",borderRadius:7,padding:"12px 14px",color:C.text,width:"100%",fontSize:14,minHeight:120,resize:"vertical",fontFamily:"'Inter',system-ui,sans-serif",lineHeight:1.5}}
+          style={{background:C.field,border:`1px solid ${W(0.10)}`,borderRadius:7,padding:"12px 14px",color:C.text,width:"100%",fontSize:14,minHeight:120,resize:"vertical",fontFamily:"'Inter',system-ui,sans-serif",lineHeight:1.5}}
         />
       </div>
 
@@ -2687,7 +2724,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
                 {suggestions.map((s,i) => {
                   const e = exMap[s.id];
                   return e ? (
-                    <div key={s.id} style={{padding:"12px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(s.id)}>
+                    <div key={s.id} style={{padding:"12px 14px",borderTop:i===0?"none":`1px solid ${W(0.07)}`,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(s.id)}>
                       <div style={{flex:1}}>
                         <div style={{fontWeight:600,fontSize:14,color:C.text}}>{e.name}</div>
                         <div style={{fontSize:11,color:C.orange,marginTop:2}}>{s.reason}</div>
@@ -2725,7 +2762,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
               </div>
               <div style={card}>
                 {browseList.map((e,i) => (
-                  <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(e.id)}>
+                  <div key={e.id} style={{padding:"11px 14px",borderTop:i===0?"none":`1px solid ${W(0.07)}`,display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>doSwap(e.id)}>
                     <div style={{flex:1,fontWeight:500,fontSize:14,color:C.text}}>{e.name}</div>
                     <span style={{color:C.orange,fontSize:18}}>›</span>
                   </div>
@@ -2757,7 +2794,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
 
       {plan.days?.map((day,di)=>(
         <div key={di} style={{...card,marginBottom:10}}>
-          <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,255,255,0.10)"}}>
+          <div style={{padding:"10px 14px",borderBottom:`1px solid ${W(0.10)}`}}>
             <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:16,color:C.text}}>{day.name}</div>
             <div style={{fontSize:11,color:C.textMute,marginTop:2}}>{day.exercises?.length} exercises</div>
           </div>
@@ -2768,7 +2805,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
               onPlanChange({...plan,days:plan.days.map((d,ddi)=>ddi!==di?d:{...d,exercises:d.exercises.map((exr,eei)=>eei!==ei?exr:{...exr,setConfigs:[{...exr.setConfigs[0],[field]:val}]})})});
             };
             return(
-              <div key={ei} style={{borderTop:ei===0?"none":"1px solid rgba(255,255,255,0.07)"}}>
+              <div key={ei} style={{borderTop:ei===0?"none":`1px solid ${W(0.07)}`}}>
                 <div style={{padding:"9px 14px",display:"flex",alignItems:"center",gap:10}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:500,fontSize:14,color:e?C.text:C.red}}>{e?e.name:`Unknown (${ex.exerciseId})`}</div>
@@ -2818,7 +2855,7 @@ function GeneratedPlanView({plan, exMap, exercises, onSave, onRegenerate, onPlan
           value={feedback}
           onChange={e=>setFeedback(e.target.value)}
           placeholder="e.g. Could do with more chest volume, and swap out the leg press for hack squat..."
-          style={{background:C.field,border:"1px solid rgba(255,255,255,0.18)",borderRadius:8,padding:"10px 12px",color:C.text,width:"100%",fontSize:13,minHeight:72,resize:"none",fontFamily:"'Inter',system-ui,sans-serif",lineHeight:1.5,boxSizing:"border-box",marginBottom:8}}
+          style={{background:C.field,border:`1px solid ${W(0.18)}`,borderRadius:8,padding:"10px 12px",color:C.text,width:"100%",fontSize:13,minHeight:72,resize:"none",fontFamily:"'Inter',system-ui,sans-serif",lineHeight:1.5,boxSizing:"border-box",marginBottom:8}}
         />
         {refineError&&<div style={{fontSize:12,color:C.red,marginBottom:8}}>{refineError}</div>}
         <button
@@ -2869,13 +2906,13 @@ function ExerciseInfoPanel({name, muscle, onClose}){
   return(
     <div style={{position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
       {/* Backdrop */}
-      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.7)"}} onClick={onClose}/>
+      <div style={{position:"absolute",inset:0,background:K(0.7)}} onClick={onClose}/>
 
       {/* Panel */}
-      <div style={{position:"relative",background:C.surface,borderRadius:"18px 18px 0 0",maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
+      <div style={{position:"relative",background:C.surface,borderRadius:"18px 18px 0 0",maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:`0 -8px 40px ${S(0.6)}`}}>
 
         {/* Handle + header */}
-        <div style={{padding:"12px 18px 10px",borderBottom:"1px solid rgba(255,255,255,0.10)",flexShrink:0}}>
+        <div style={{padding:"12px 18px 10px",borderBottom:`1px solid ${W(0.10)}`,flexShrink:0}}>
           <div style={{width:36,height:4,background:C.lineStrong,borderRadius:2,margin:"0 auto 12px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div>
@@ -2927,7 +2964,7 @@ function ExerciseInfoPanel({name, muscle, onClose}){
                   <div>
                     <span style={{fontSize:11,color:C.textMute,fontWeight:600}}>SECONDARY: </span>
                     {info.secondaryMuscles.map((m,i)=>(
-                      <span key={i} style={{fontSize:12,background:C.field,border:"1px solid rgba(255,255,255,0.18)",borderRadius:4,padding:"2px 7px",color:C.textMute,marginRight:4,display:"inline-block",marginBottom:4}}>{m}</span>
+                      <span key={i} style={{fontSize:12,background:C.field,border:`1px solid ${W(0.18)}`,borderRadius:4,padding:"2px 7px",color:C.textMute,marginRight:4,display:"inline-block",marginBottom:4}}>{m}</span>
                     ))}
                   </div>
                 )}
@@ -2965,6 +3002,8 @@ function ExerciseInfoPanel({name, muscle, onClose}){
 // ─── Home Tab ─────────────────────────────────────────────────────────────────
 function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calProfile,onGoToToday,onStartSession,userName,onSaveUserName,customMacros,cardioData,dailyLog,measurements,pics,onGoTab}){
   const [editingName,setEditingName]=useState(false);
+  const [settingsOpen,setSettingsOpen]=useState(false);
+  const theme=useTheme();
   const [nameInput,setNameInput]=useState(userName||"");
   const [tip,setTip]=useState("");
   const [tipLoading,setTipLoading]=useState(false);
@@ -3103,7 +3142,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
     <div key={label} style={{...card,marginBottom:0,padding:16,minWidth:0}}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>{label}</div>
       <div style={{fontSize:26,fontWeight:800,letterSpacing:-0.8,marginTop:4,color:C.text,fontVariantNumeric:"tabular-nums",lineHeight:1.1}}>{valEl}</div>
-      {frac!=null&&<div style={{height:5,borderRadius:3,background:"rgba(255,255,255,0.1)",marginTop:8,overflow:"hidden"}}><div style={{width:`${Math.round(frac*100)}%`,height:"100%",borderRadius:3,background:C.orange}}/></div>}
+      {frac!=null&&<div style={{height:5,borderRadius:3,background:W(0.1),marginTop:8,overflow:"hidden"}}><div style={{width:`${Math.round(frac*100)}%`,height:"100%",borderRadius:3,background:C.orange}}/></div>}
       {sub&&<div style={{fontSize:12,fontWeight:600,marginTop:6}}>{sub}</div>}
     </div>
   );
@@ -3133,6 +3172,26 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
   return(
     <div style={{padding:"6px 12px 32px"}}>
 
+      {/* Settings sheet */}
+      {settingsOpen&&(
+        <div role="dialog" aria-label="Settings" style={{position:"fixed",inset:0,zIndex:58,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
+          <div onClick={()=>setSettingsOpen(false)} style={{position:"absolute",inset:0,background:K(0.55)}}/>
+          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:P("34,34,40",0.9),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,boxShadow:`${C.glassHi}, 0 -10px 60px ${S(0.6)}`,padding:16,animation:"fadeIn .2s ease"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+              <div style={{fontWeight:700,fontSize:17,color:C.text}}>Settings</div>
+              <button aria-label="Close settings" onClick={()=>setSettingsOpen(false)} style={{...btn("ghost"),padding:0,width:36,height:36,minHeight:36,justifyContent:"center"}}>{Ic.x}</button>
+            </div>
+            <div style={{fontSize:13,fontWeight:600,color:C.textMute,marginBottom:8}}>Appearance</div>
+            <div style={segWrap} role="radiogroup" aria-label="Theme">
+              {[["dark","Dark"],["light","Light"]].map(([id,label])=>(
+                <button key={id} role="radio" aria-checked={theme===id} onClick={()=>setTheme(id)} style={segBtn(theme===id)}>{label}</button>
+              ))}
+            </div>
+            <div style={{fontSize:12,color:C.textFaint,marginTop:10,lineHeight:1.4}}>Saved on this device.</div>
+          </div>
+        </div>
+      )}
+
       {/* Greeting */}
       <div style={{padding:"4px 8px 16px"}}>
         {editingName?(
@@ -3144,7 +3203,13 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
           </div>
         ):(
           <>
-            <div style={{fontSize:14,color:C.textMute,fontWeight:500}}>{greeting}</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+              <div style={{fontSize:14,color:C.textMute,fontWeight:500}}>{greeting}</div>
+              <button aria-label="Settings" title="Settings" onClick={()=>setSettingsOpen(true)}
+                style={{...btn("ghost"),padding:0,width:36,height:36,minHeight:36,justifyContent:"center",flexShrink:0}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:17,height:17}} aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </button>
+            </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:30,fontWeight:800,letterSpacing:-1,lineHeight:1.15,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{userName||session.email}</div>
               <button aria-label="Edit name" style={{background:"none",border:"none",cursor:"pointer",color:C.textFaint,padding:6,display:"flex"}} onClick={()=>{setNameInput(userName||"");setEditingName(true);}}>{Ic.edit}</button>
@@ -3155,7 +3220,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
 
       {/* Today hero */}
       {activePlan?(
-        <div style={{...card,borderRadius:32,padding:20,background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.14)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22), 0 24px 60px rgba(0,0,0,0.45)"}}>
+        <div style={{...card,borderRadius:32,padding:20,background:C.hero,border:`1px solid ${C.heroBorder}`,boxShadow:`inset 0 1px 0 ${W(0.22)}, 0 24px 60px ${S(0.45)}`}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             {kick(heroDay?"Today":"This week",C.orange)}
             <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>{heroDay?`${heroNames.length} exercises`:activePlan.name}</div>
@@ -3163,7 +3228,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
           <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,letterSpacing:-1,marginTop:4,lineHeight:1.1,color:C.text}}>{heroDay?heroDay.name:"All sessions done"}</div>
           {heroDay&&heroNames.length>0&&(
             <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-              {heroNames.slice(0,3).map((n,i)=><span key={i} style={{fontSize:12,fontWeight:600,background:"rgba(255,255,255,0.08)",padding:"6px 11px",borderRadius:13,color:C.text}}>{n}</span>)}
+              {heroNames.slice(0,3).map((n,i)=><span key={i} style={{fontSize:12,fontWeight:600,background:W(0.08),padding:"6px 11px",borderRadius:13,color:C.text}}>{n}</span>)}
               {heroNames.length>3&&<span style={{fontSize:12,fontWeight:600,color:C.textMute,padding:"6px 4px"}}>+{heroNames.length-3} more</span>}
             </div>
           )}
@@ -3525,7 +3590,7 @@ function CardioTab({data,onSave}){
           <SectionHead label={`Session Log (${sessions.length})`}/>
           <div style={card}>
             {displayedSess.map((s,i)=>(
-              <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderTop:i===0?"none":"1px solid rgba(255,255,255,0.07)"}}>
+              <div key={s.id} style={{display:"flex",alignItems:"center",padding:"10px 14px",borderTop:i===0?"none":`1px solid ${W(0.07)}`}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:600,fontSize:14,color:C.text}}>{s.type}</div>
                   <div style={{fontSize:11,color:C.textMute,marginTop:2}}>{fmtDate(s.date)} · {s.duration} mins{s.distance?` · ${s.distance}km`:""}{s.calories?` · ${s.calories} cal`:""}</div>
@@ -3533,7 +3598,7 @@ function CardioTab({data,onSave}){
                 <button style={{...btn("danger"),padding:"5px 7px"}} onClick={()=>removeSession(s.id)}>{Ic.trash}</button>
               </div>
             ))}
-            {sessions.length>14&&<div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,0.07)",textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllSess(!showAllSess)}>{showAllSess?"Show Less":`Show all ${sessions.length}`}</button></div>}
+            {sessions.length>14&&<div style={{padding:"10px 14px",borderTop:`1px solid ${W(0.07)}`,textAlign:"center"}}><button style={{...btn("ghost"),padding:"6px 16px",fontSize:12}} onClick={()=>setShowAllSess(!showAllSess)}>{showAllSess?"Show Less":`Show all ${sessions.length}`}</button></div>}
           </div>
         </>
       )}
@@ -3643,7 +3708,7 @@ function RunningTab({data,onSave,cardioData,onSaveCardio}){
       <div style={{marginBottom:16}}>
         <SectionHead label="Choose a programme"/>
         {Object.values(RUN_PROGRAMMES).map(p=>(
-          <div key={p.id} onClick={()=>selectProgramme(p.id)} style={{...card,padding:"14px",marginBottom:8,cursor:"pointer",border:progId===p.id?"1px solid rgba(255,122,46,0.55)":"1px solid rgba(255,255,255,0.10)",background:progId===p.id?C.orangeBg:C.surface}}>
+          <div key={p.id} onClick={()=>selectProgramme(p.id)} style={{...card,padding:"14px",marginBottom:8,cursor:"pointer",border:progId===p.id?"1px solid rgba(255,122,46,0.55)":`1px solid ${W(0.10)}`,background:progId===p.id?C.orangeBg:C.surface}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{flex:1}}>
                 <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:18,color:progId===p.id?C.orange:C.text}}>{p.name}</div>
@@ -3665,7 +3730,7 @@ function RunningTab({data,onSave,cardioData,onSaveCardio}){
           {builtWeeks.map((week,wi)=>{
             const weekDone=week.every((_,ri)=>completed[`${wi}-${ri}`]);
             return(
-              <div key={wi} style={{...card,padding:"12px 14px",marginBottom:10,border:weekDone?"1px solid rgba(48,209,88,0.28)":"1px solid rgba(255,255,255,0.10)"}}>
+              <div key={wi} style={{...card,padding:"12px 14px",marginBottom:10,border:weekDone?"1px solid rgba(48,209,88,0.28)":`1px solid ${W(0.10)}`}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:700,fontSize:16,color:C.text}}>Week {wi+1}{weekDone&&<span style={{color:C.green,marginLeft:8,fontSize:13}}>✓</span>}</div>
                 </div>
@@ -3819,7 +3884,7 @@ function GuidedRun({run,weekIdx,runIdx,onFinish,onExit}){
   };
 
   return(
-    <div style={{position:"fixed",inset:0,zIndex:400,background:done?C.greenBg:(block?colour(block.type):C.text),display:"flex",flexDirection:"column",transition:"background 0.4s"}}>
+    <div style={{position:"fixed",inset:0,zIndex:400,background:done?(THEME==="light"?C.green:C.greenBg):(block?colour(block.type):C.text),display:"flex",flexDirection:"column",transition:"background 0.4s"}}>
       {/* Top bar */}
       <div style={{padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <button onClick={()=>{window.speechSynthesis?.cancel();stopKeepalive();onExit();}} style={{background:"rgba(0,0,0,0.25)",border:"none",borderRadius:8,padding:"8px 12px",color:"white",fontSize:13,fontWeight:600,cursor:"pointer"}}>← Exit</button>

@@ -14,6 +14,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3" />
     <title>The Reel Neil Fitness</title>
+    <script>
+      // Paint the saved light theme before the app loads, so there is no dark flash on open.
+      try{if(localStorage.getItem("rnf:theme")==="light"){document.write('<style id="rnf-theme-boot">html,body{background:#f2f2f6!important}</style>');document.querySelector('meta[name="theme-color"]').setAttribute("content","#f2f2f6");document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute("content","default");}}catch(e){}
+    </script>
   </head>
   <body style="margin:0;background:#07070a;">
     <div id="root"></div>
