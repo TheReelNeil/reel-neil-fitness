@@ -131,8 +131,8 @@ const MUSCLES = [...new Set(DEFAULT_EXERCISES.map(e=>e.muscle))];
 // shared styles below are rebuilt by applyTheme(), so switching re-renders live.
 // The choice is kept per device in localStorage ("rnf:theme"); dark is the default.
 const PALETTES={
-  dark:{bg:"#07070a",surface:"#141419",surfaceAlt:"#1b1b21",field:"rgba(255,255,255,0.07)",line:"rgba(255,255,255,0.10)",lineStrong:"rgba(255,255,255,0.18)",text:"#f5f5f7",textMute:"#a7a7b0",textFaint:"#8a8a94",onDark:"#0b0b0f",ink:"#160900",orange:"#ff7a2e",orangeBg:"rgba(255,122,46,0.16)",green:"#30d158",greenBg:"rgba(48,209,88,0.15)",gold:"#ffd60a",goldBg:"rgba(255,214,10,0.12)",blue:"#64d2ff",blueBg:"rgba(100,210,255,0.14)",red:"#ff453a",redBg:"rgba(255,69,58,0.14)",glass:"rgba(255,255,255,0.065)",glassBorder:"rgba(255,255,255,0.12)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.16)",navOn:"#ffa36b",navOff:"#d1d1d6",purple:"#bf5af2",bgRgb:"7,7,10",hero:"rgba(255,255,255,0.07)",heroBorder:"rgba(255,255,255,0.14)"},
-  light:{bg:"#f2f2f6",surface:"#ffffff",surfaceAlt:"#f7f7fa",field:"rgba(20,20,30,0.05)",line:"rgba(20,20,30,0.09)",lineStrong:"rgba(20,20,30,0.16)",text:"#16161a",textMute:"#5c5c66",textFaint:"#74747e",onDark:"#ffffff",ink:"#160900",orange:"#ea6215",orangeBg:"rgba(234,98,21,0.12)",green:"#1e9a52",greenBg:"rgba(30,154,82,0.12)",gold:"#b38300",goldBg:"rgba(179,131,0,0.12)",blue:"#1c7cd0",blueBg:"rgba(28,124,208,0.12)",red:"#dc3328",redBg:"rgba(220,51,40,0.10)",glass:"rgba(255,255,255,0.74)",glassBorder:"rgba(20,20,30,0.08)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(20,20,40,0.05)",navOn:"#d9560c",navOff:"#55555f",purple:"#9b3fd1",bgRgb:"242,242,246",hero:"rgba(255,255,255,0.86)",heroBorder:"rgba(20,20,30,0.07)"},
+  dark:{bg:"#07070a",surface:"#141419",surfaceAlt:"#1b1b21",field:"rgba(255,255,255,0.07)",line:"rgba(255,255,255,0.10)",lineStrong:"rgba(255,255,255,0.18)",text:"#f5f5f7",textMute:"#a7a7b0",textFaint:"#8a8a94",onDark:"#0b0b0f",ink:"#160900",orange:"#ff7a2e",orangeBg:"rgba(255,122,46,0.16)",green:"#30d158",greenBg:"rgba(48,209,88,0.15)",gold:"#ffd60a",goldBg:"rgba(255,214,10,0.12)",blue:"#64d2ff",blueBg:"rgba(100,210,255,0.14)",red:"#ff453a",redBg:"rgba(255,69,58,0.14)",glass:"rgba(255,255,255,0.065)",glassBorder:"rgba(255,255,255,0.12)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.16)",navOn:"#ffa36b",navOff:"#d1d1d6",purple:"#bf5af2",raise:"none",raiseBg:"rgba(255,255,255,0.07)",primaryBg:"#ff7a2e",primaryHi:"inset 0 1px 0 rgba(255,255,255,0.4)",primaryGlow:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",bgRgb:"7,7,10",hero:"rgba(255,255,255,0.07)",heroBorder:"rgba(255,255,255,0.14)"},
+  light:{bg:"#e9ebf1",surface:"#ffffff",surfaceAlt:"#f7f7fa",field:"rgba(255,255,255,0.7)",line:"rgba(30,30,60,0.09)",lineStrong:"rgba(30,30,60,0.16)",text:"#16161a",textMute:"#5a5a66",textFaint:"#72727e",onDark:"#ffffff",ink:"#160900",orange:"#ea6215",orangeBg:"rgba(234,98,21,0.13)",green:"#1e9a52",greenBg:"rgba(30,154,82,0.13)",gold:"#b38300",goldBg:"rgba(179,131,0,0.13)",blue:"#1c7cd0",blueBg:"rgba(28,124,208,0.13)",red:"#dc3328",redBg:"rgba(220,51,40,0.11)",glass:"rgba(255,255,255,0.52)",glassBorder:"rgba(255,255,255,0.85)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 2px rgba(30,30,70,0.05), 0 12px 32px rgba(30,30,70,0.09)",raise:"inset 0 1px 0 #ffffff, inset 0 -1px 0 rgba(30,30,70,0.08), 0 1px 2px rgba(30,30,70,0.12), 0 4px 12px rgba(30,30,70,0.07)",raiseBg:"linear-gradient(180deg,#ffffff 0%,#eceef4 100%)",primaryBg:"linear-gradient(180deg,#ff8d44 0%,#ee6a1c 55%,#db590e 100%)",primaryHi:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -2px 0 rgba(140,50,0,0.18), 0 2px 4px rgba(160,60,0,0.22), 0 8px 18px rgba(234,98,21,0.28)",primaryGlow:"inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(140,50,0,0.2), 0 3px 6px rgba(160,60,0,0.22), 0 14px 30px rgba(234,98,21,0.35)",navOn:"#d9560c",navOff:"#4f4f5a",purple:"#9b3fd1",bgRgb:"233,235,241",hero:"rgba(255,255,255,0.58)",heroBorder:"rgba(255,255,255,0.9)"},
 };
 const MC_PAL={
   dark:{Chest:"#ff8a65",Back:"#40d9c0",Shoulders:"#ffb340",Biceps:"#ff6fa8",Triceps:"#ff9f45",Quads:"#30d158",Hamstrings:"#64a8ff",Glutes:"#ffd60a",Adductors:"#d283ff",Calves:"#a9bccf",Core:"#f0c040",Traps:"#5ac8fa",Forearms:"#e8a868"},
@@ -143,9 +143,10 @@ let THEME=(()=>{try{return localStorage.getItem(THEME_KEY)==="light"?"light":"da
 const C={};const MC={};
 // Theme aware stand ins for rgba() values that were hard coded for the dark look.
 const W=a=>THEME==="light"?`rgba(20,20,30,${+(a*0.75).toFixed(3)})`:`rgba(255,255,255,${a})`; // tints: lines, fields, chips
-const S=a=>THEME==="light"?`rgba(20,20,40,${+(a*0.3).toFixed(3)})`:`rgba(0,0,0,${a})`;      // drop shadows and dark wells
+const S=a=>THEME==="light"?`rgba(30,30,70,${+(a*0.4).toFixed(3)})`:`rgba(0,0,0,${a})`;      // drop shadows and dark wells
 const K=a=>THEME==="light"?`rgba(10,10,20,${+(a*0.55).toFixed(3)})`:`rgba(0,0,0,${a})`;     // scrims behind sheets
-const P=(rgb,a)=>THEME==="light"?`rgba(252,252,254,${Math.max(a,0.82)})`:`rgba(${rgb},${a})`; // frosted panels
+const P=(rgb,a)=>THEME==="light"?`rgba(255,255,255,${Math.min(0.8,Math.max(a,0.6))})`:`rgba(${rgb},${a})`; // frosted panels
+const WB=a=>THEME==="light"?(a>=0.05?C.raiseBg:`rgba(255,255,255,${+(0.4+a*4).toFixed(3)})`):`rgba(255,255,255,${a})`; // raised fills: chips, pills, set boxes
 const B=a=>`rgba(${C.bgRgb},${a})`;                                                       // page background fades
 let css,GLOW,base,inp,setInp,card,lbl,h1,segWrap,chip;
 function buildStyles(){
@@ -162,7 +163,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:1;}
 
 // Fixed shell sized by a JS-measured viewport height (--appH, set in App root) —
 // iOS standalone PWAs misreport the bottom edge, so we measure rather than anchor.
-GLOW=THEME==="light"?`radial-gradient(circle at 95% 0%, rgba(255,122,46,0.20), transparent 40%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.09), transparent 42%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.10), transparent 44%), ${C.bg}`:`radial-gradient(circle at 95% 0%, rgba(255,106,26,0.42), transparent 38%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.20), transparent 40%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.14), transparent 42%), ${C.bg}`;
+GLOW=THEME==="light"?`radial-gradient(circle at 95% 0%, rgba(255,112,36,0.38), transparent 42%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.20), transparent 44%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.22), transparent 46%), ${C.bg}`:`radial-gradient(circle at 95% 0%, rgba(255,106,26,0.42), transparent 38%), radial-gradient(circle at 0% 42%, rgba(56,110,255,0.20), transparent 40%), radial-gradient(circle at 75% 100%, rgba(255,150,40,0.14), transparent 42%), ${C.bg}`;
 base={display:"flex",flexDirection:"column",position:"fixed",top:"var(--appTop, 0px)",left:0,right:0,height:"var(--appH, 100dvh)",maxWidth:480,margin:"0 auto",background:GLOW,overflow:"hidden"};
 inp={background:C.field,border:`1px solid ${C.line}`,borderRadius:14,padding:"12px 14px",color:C.text,width:"100%",fontSize:16,boxSizing:"border-box"};
 setInp={background:C.field,border:"1px solid transparent",borderRadius:21,padding:"10px 6px",height:42,color:C.text,textAlign:"center",width:"100%",fontSize:18,fontWeight:700,fontVariantNumeric:"tabular-nums"};
@@ -170,7 +171,7 @@ card={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:24,mar
 lbl={fontSize:13,fontWeight:600,color:C.textMute,display:"block",marginBottom:6};
 h1={fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontWeight:800,fontSize:30,letterSpacing:-1,lineHeight:1.15,color:C.text};
 segWrap={display:"flex",gap:4,padding:4,borderRadius:999,background:W(0.06),border:`1px solid ${W(0.08)}`};
-chip={fontSize:12,fontWeight:600,background:W(0.08),borderRadius:12,padding:"5px 10px",color:C.text};
+chip={fontSize:12,fontWeight:600,background:WB(0.08),boxShadow:C.raise,borderRadius:12,padding:"5px 10px",color:C.text};
 }
 const themeListeners=new Set();
 function applyTheme(t){
@@ -187,9 +188,9 @@ applyTheme(THEME);
 function setTheme(t){applyTheme(t);try{localStorage.setItem(THEME_KEY,THEME);}catch{}themeListeners.forEach(f=>f(THEME));}
 function useTheme(){const [t,setT]=useState(THEME);useEffect(()=>{themeListeners.add(setT);return()=>{themeListeners.delete(setT);};},[]);return t;}
 const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"11px 18px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,letterSpacing:0,minHeight:44,
-  ...(v==="primary"?{background:C.orange,color:C.ink,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.4)"}:v==="ghost"?{background:C.field,color:C.text,border:`1px solid ${C.line}`}:v==="danger"?{background:C.redBg,color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
-const pillS=(on,col=C.orange)=>({flexShrink:0,height:34,padding:"0 14px",borderRadius:999,border:`1px solid ${on?col+"88":W(0.10)}`,background:on?col+"26":W(0.06),color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:on?700:600,cursor:"pointer",whiteSpace:"nowrap"});
-const segBtn=on=>({flex:1,height:36,borderRadius:999,border:"none",background:on?(THEME==="light"?"#ffffff":"rgba(255,255,255,0.16)"):"transparent",color:on?C.text:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:14,fontWeight:on?700:600,cursor:"pointer",boxShadow:on?"inset 0 1px 0 rgba(255,255,255,0.18)":"none",whiteSpace:"nowrap",padding:"0 6px"});
+  ...(v==="primary"?{background:C.primaryBg,color:C.ink,boxShadow:C.primaryHi}:v==="ghost"?{background:C.raiseBg,color:C.text,border:`1px solid ${C.line}`,boxShadow:C.raise}:v==="danger"?{background:C.redBg,color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
+const pillS=(on,col=C.orange)=>({flexShrink:0,height:34,padding:"0 14px",borderRadius:999,border:`1px solid ${on?col+"88":W(0.10)}`,background:on?col+"26":WB(0.06),boxShadow:on?"none":C.raise,color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:on?700:600,cursor:"pointer",whiteSpace:"nowrap"});
+const segBtn=on=>({flex:1,height:36,borderRadius:999,border:"none",background:on?(THEME==="light"?C.raiseBg:"rgba(255,255,255,0.16)"):"transparent",color:on?C.text:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:14,fontWeight:on?700:600,cursor:"pointer",boxShadow:on?(THEME==="light"?C.raise:"inset 0 1px 0 rgba(255,255,255,0.18)"):"none",whiteSpace:"nowrap",padding:"0 6px"});
 const tgl=(on,col=C.orange)=>({flex:1,minHeight:44,padding:"8px 6px",borderRadius:16,border:`1px solid ${on?col+"88":C.line}`,background:on?col+"26":C.field,color:on?col:C.textMute,fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:700,cursor:"pointer",lineHeight:1.2});
 const statBox=(color=C.orange)=>({background:C.glass,border:`1px solid ${color}33`,borderRadius:20,padding:"14px 16px",flex:1,boxShadow:C.glassHi});
 const est1RM = (w,r) => (!w||!r||r<=0)?0:r===1?w:Math.round(w*(1+r/30));
@@ -533,7 +534,7 @@ function MainApp({session,onLogout}){
         {tab==="running"  &&<RunningTab data={runData} onSave={saveRunData} cardioData={cardioData} onSaveCardio={saveCardioData}/>}
       </div>
       <div aria-hidden="true" style={{position:"absolute",left:0,right:0,bottom:0,height:"calc(env(safe-area-inset-bottom, 0px) + 110px)",background:`linear-gradient(to bottom, ${B(0)}, ${B(0.85)} 60%)`,pointerEvents:"none",zIndex:55}}/>
-      <nav aria-label="Main" style={{position:"absolute",left:14,right:14,bottom:"calc(env(safe-area-inset-bottom, 0px) + 10px)",height:68,borderRadius:34,background:P("38,38,46",0.62),backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",border:`1px solid ${W(0.15)}`,boxShadow:`inset 0 1px 0 ${W(0.2)}, 0 18px 44px ${S(0.6)}`,display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",alignItems:"center",padding:"0 6px",zIndex:60}}>
+      <nav aria-label="Main" style={{position:"absolute",left:14,right:14,bottom:"calc(env(safe-area-inset-bottom, 0px) + 10px)",height:68,borderRadius:34,background:P("38,38,46",0.62),backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",border:`1px solid ${THEME==="light"?"rgba(255,255,255,0.85)":W(0.15)}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.2), 0 18px 44px ${S(0.6)}`,display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",alignItems:"center",padding:"0 6px",zIndex:60}}>
         {NAV.map(([id,label,icon])=>{
           const on=id==="more"?(inMore||moreOpen):(tab===id&&!moreOpen);
           return(
@@ -547,12 +548,12 @@ function MainApp({session,onLogout}){
       {moreOpen&&(
         <div role="dialog" aria-label="More" style={{position:"fixed",inset:0,zIndex:58,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
           <div onClick={()=>setMoreOpen(false)} style={{position:"absolute",inset:0,background:K(0.55)}}/>
-          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:P("34,34,40",0.86),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${W(0.14)}`,boxShadow:`inset 0 1px 0 ${W(0.2)}, 0 -10px 60px ${S(0.6)}`,padding:14,animation:"fadeIn .18s ease-out"}}>
+          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:P("34,34,40",0.86),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${THEME==="light"?"rgba(255,255,255,0.85)":W(0.14)}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.2), 0 -10px 60px ${S(0.6)}`,padding:14,animation:"fadeIn .18s ease-out"}}>
             <div style={{fontSize:13,fontWeight:600,color:C.textMute,padding:"2px 6px 10px"}}>More</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
               {MORE.map(([id,label,icon,col])=>(
                 <button key={id} onClick={()=>{setTab(id);setMoreOpen(false);}} aria-current={tab===id?"page":undefined}
-                  style={{height:92,borderRadius:22,border:`1px solid ${tab===id?col+"88":W(0.08)}`,background:tab===id?col+"1f":W(0.06),color:C.text,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:600,padding:"0 4px"}}>
+                  style={{height:92,borderRadius:22,border:`1px solid ${tab===id?col+"88":W(0.08)}`,background:tab===id?col+"1f":WB(0.06),boxShadow:C.raise,color:C.text,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:600,padding:"0 4px"}}>
                   <span style={{width:40,height:40,borderRadius:20,background:col+"26",color:col,display:"flex",alignItems:"center",justifyContent:"center"}}>{icon}</span>
                   {label}
                 </button>
@@ -2060,7 +2061,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
   const keepPb=p=>{onSavePbs({...pbs,[p.id]:{weight:p.weight,reps:p.reps,date:p.date}});setPendingPbs(l=>l.filter(x=>x.id!==p.id));setNewPbIds(n=>new Set(n).add(p.id));};
   const discardPb=id=>setPendingPbs(l=>l.filter(x=>x.id!==id));
   const glassCard={background:C.glass,border:`1px solid ${C.glassBorder}`,borderRadius:30,boxShadow:`${C.glassHi}, 0 20px 50px ${S(0.45)}`,backdropFilter:"blur(28px) saturate(180%)",WebkitBackdropFilter:"blur(28px) saturate(180%)"};
-  const pill={border:`1px solid ${C.line}`,background:C.field,color:C.text,borderRadius:999,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:650,fontSize:14};
+  const pill={border:`1px solid ${C.line}`,background:C.raiseBg,boxShadow:C.raise,color:C.text,borderRadius:999,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:650,fontSize:14};
   const iconBtn={width:42,height:42,borderRadius:21,border:"none",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.text,padding:0};
   const svgI=(d,col)=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
   const volOf=a=>(a||[]).reduce((t,x)=>t+(parseFloat(x?.weight)||0)*(parseInt(x?.reps)||0),0);
@@ -2141,7 +2142,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
               <div style={{fontSize:13,color:C.text,lineHeight:1.4}}>Last week you swapped this for <b>{exMap[to].name}</b>. Do the same?</div>
               <div style={{fontSize:12,color:C.textMute,marginTop:2}}>Yes saves it to your plan for future weeks.</div>
               <div style={{display:"flex",gap:8,marginTop:8}}>
-                <button onClick={()=>keepSwapInPlan(ex.exerciseId,to)} style={{...pill,flex:1,height:38,background:C.orange,color:C.ink,border:"none",fontSize:13,fontWeight:700}}>Yes, save it</button>
+                <button onClick={()=>keepSwapInPlan(ex.exerciseId,to)} style={{...pill,flex:1,height:38,background:C.primaryBg,boxShadow:C.primaryHi,color:C.ink,border:"none",fontSize:13,fontWeight:700}}>Yes, save it</button>
                 <button onClick={()=>setDismissedSwap(d=>[...d,ex.exerciseId])} style={{...pill,flex:1,height:38,fontSize:13}}>No</button>
               </div>
             </div>);})()}
@@ -2161,7 +2162,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
           <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:6}}>
           {exSets.map((s,si)=>{const lbl=labels[si],p=prevSets[si],isDone=!!(s.weight&&s.reps),isCur=si===firstOpen;return(
             <div key={si} style={{display:"grid",gridTemplateColumns:"36px minmax(0,1fr) minmax(0,1fr) 62px",gap:6,alignItems:"center",minHeight:54,padding:"5px 6px",borderRadius:27,
-              background:isDone?"rgba(48,209,88,0.08)":isCur?W(0.08):W(0.03),
+              background:isDone?"rgba(48,209,88,0.08)":isCur?WB(0.08):WB(0.03),
               border:isDone?"1px solid rgba(48,209,88,0.22)":isCur?`1.5px solid ${C.orange}`:`1px solid ${C.line}`,
               boxShadow:isCur?"0 0 0 4px rgba(255,122,46,0.10)":"none"}}>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
@@ -2173,15 +2174,15 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
               <input type="number" inputMode="decimal" min="0" step="0.5" placeholder="kg" value={s.weight} aria-label={`Set ${si+1} weight in kg`}
                 onFocus={ev=>ev.target.select()}
                 onChange={ev=>updateSet(activeId,si,"weight",ev.target.value)}
-                style={{...setInp,background:isDone?W(0.05):W(0.09),color:s.carriedOver&&!s._edited?C.gold:C.text}}/>
+                style={{...setInp,background:isDone?WB(0.05):WB(0.09),boxShadow:C.raise,color:s.carriedOver&&!s._edited?C.gold:C.text}}/>
               <input type="number" inputMode="numeric" min="0" placeholder="reps" value={s.reps} aria-label={`Set ${si+1} reps`}
                 onFocus={ev=>ev.target.select()}
                 onChange={ev=>updateSet(activeId,si,"reps",ev.target.value)}
-                style={{...setInp,background:isDone?W(0.05):W(0.09),border:isCur&&s.weight&&!s.reps?`1.5px solid ${C.orange}99`:"1px solid transparent"}}/>
+                style={{...setInp,background:isDone?WB(0.05):WB(0.09),boxShadow:C.raise,border:isCur&&s.weight&&!s.reps?`1.5px solid ${C.orange}99`:"1px solid transparent"}}/>
               <div style={{textAlign:"right",paddingRight:8,fontSize:13,color:prevSets.fromOtherBlock?C.textFaint:C.textMute,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{p?.weight?`${p.weight}×${p.reps||"–"}`:"–"}</div>
             </div>);})}
           </div>
-          <button onClick={()=>addExtraSet(activeId)} style={{...pill,width:"100%",height:46,marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:C.textMute,background:W(0.04)}}>{Ic.plus}Add set</button>
+          <button onClick={()=>addExtraSet(activeId)} style={{...pill,width:"100%",height:46,marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6,color:C.textMute,background:WB(0.04),boxShadow:C.raise}}>{Ic.plus}Add set</button>
         </div>);
       })}
       <div style={{padding:"14px 12px 0"}}>
@@ -2213,7 +2214,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
       </div>
     </div>
     <div style={{position:"absolute",left:typing?"auto":12,right:12,bottom:typing?8:"calc(env(safe-area-inset-bottom, 0px) + 12px)",display:"flex",gap:10,alignItems:"center",justifyContent:"flex-end",zIndex:50,pointerEvents:"none"}}>
-      {!typing&&<button onClick={handleSave} style={{pointerEvents:"auto",flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?P("40,40,48",0.78):C.orange,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>}
+      {!typing&&<button onClick={handleSave} style={{pointerEvents:"auto",flex:1,height:60,borderRadius:30,border:saved?`1px solid ${C.glassBorder}`:"none",background:saved?P("40,40,48",0.78):C.primaryBg,color:saved?C.green:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:saved?C.glassHi:C.primaryGlow,backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{saved?<>{Ic.check} Saved, tap to update</>:"Finish session"}</button>}
       <div style={{pointerEvents:"auto"}}><RestTimer compact={typing}/></div>
     </div>
     {exerciseInfo&&<ExerciseInfoPanel name={exerciseInfo.name} muscle={exerciseInfo.muscle} onClose={()=>setExerciseInfo(null)}/>}
@@ -2318,7 +2319,7 @@ function SessionLogger({day,dayIdx,plan,week,logs,pbs,exMap,onLog,onSavePbs,onRe
           </div>}
         </div>
         <div style={{position:"absolute",left:12,right:12,bottom:"calc(env(safe-area-inset-bottom, 0px) + 14px)",maxWidth:456,margin:"0 auto"}}>
-          <button onClick={closeComplete} style={{width:"100%",height:60,borderRadius:30,border:"none",background:C.orange,color:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)"}}>{pendingPbs.length>0?"Done":"Nice one, back to training"}</button>
+          <button onClick={closeComplete} style={{width:"100%",height:60,borderRadius:30,border:"none",background:C.primaryBg,color:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:C.primaryGlow}}>{pendingPbs.length>0?"Done":"Nice one, back to training"}</button>
         </div>
       </div>);})()}
     {swappingEx&&(
@@ -3220,7 +3221,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
 
       {/* Today hero */}
       {activePlan?(
-        <div style={{...card,borderRadius:32,padding:20,background:C.hero,border:`1px solid ${C.heroBorder}`,boxShadow:`inset 0 1px 0 ${W(0.22)}, 0 24px 60px ${S(0.45)}`}}>
+        <div style={{...card,borderRadius:32,padding:20,background:C.hero,border:`1px solid ${C.heroBorder}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.22), 0 24px 60px ${S(0.45)}`}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             {kick(heroDay?"Today":"This week",C.orange)}
             <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>{heroDay?`${heroNames.length} exercises`:activePlan.name}</div>
@@ -3228,7 +3229,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
           <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,letterSpacing:-1,marginTop:4,lineHeight:1.1,color:C.text}}>{heroDay?heroDay.name:"All sessions done"}</div>
           {heroDay&&heroNames.length>0&&(
             <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-              {heroNames.slice(0,3).map((n,i)=><span key={i} style={{fontSize:12,fontWeight:600,background:W(0.08),padding:"6px 11px",borderRadius:13,color:C.text}}>{n}</span>)}
+              {heroNames.slice(0,3).map((n,i)=><span key={i} style={{fontSize:12,fontWeight:600,background:WB(0.08),boxShadow:C.raise,padding:"6px 11px",borderRadius:13,color:C.text}}>{n}</span>)}
               {heroNames.length>3&&<span style={{fontSize:12,fontWeight:600,color:C.textMute,padding:"6px 4px"}}>+{heroNames.length-3} more</span>}
             </div>
           )}
@@ -3238,7 +3239,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
             </div>
           )}
           {heroDay?(
-            <button style={{marginTop:16,width:"100%",height:56,borderRadius:28,border:"none",background:C.orange,color:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>{onStartSession(nextDayIdx);onGoToToday();}}>
+            <button style={{marginTop:16,width:"100%",height:56,borderRadius:28,border:"none",background:C.primaryBg,color:C.ink,fontFamily:"'Inter',system-ui,sans-serif",fontSize:17,fontWeight:750,cursor:"pointer",boxShadow:C.primaryGlow,display:"flex",alignItems:"center",justifyContent:"center",gap:8}} onClick={()=>{onStartSession(nextDayIdx);onGoToToday();}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill={C.ink} aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>Start session
             </button>
           ):(
