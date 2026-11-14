@@ -186,6 +186,27 @@ function applyTheme(t){
 }
 applyTheme(THEME);
 function setTheme(t){applyTheme(t);try{localStorage.setItem(THEME_KEY,THEME);}catch{}themeListeners.forEach(f=>f(THEME));}
+// ─── Keep the screen awake while the app is open ─────────────────────────────
+// Uses the Screen Wake Lock API. The browser drops the lock whenever the app is
+// hidden, so it is re-requested on return and on any tap. Paused during guided
+// runs, which are built for the phone to lock in a pocket. On by default; the
+// switch in Settings is saved per device ("rnf:keepAwake").
+const KEEP_AWAKE_KEY="rnf:keepAwake";
+let keepAwakeOn=(()=>{try{return localStorage.getItem(KEEP_AWAKE_KEY)!=="off";}catch{return true;}})();
+let wakeLock=null,wakeBusy=false,wakeAgain=false,wakePaused=0;
+async function syncWakeLock(){
+  if(wakeBusy){wakeAgain=true;return;}
+  wakeBusy=true;
+  try{
+    const want=keepAwakeOn&&wakePaused===0&&typeof document!=="undefined"&&document.visibilityState==="visible";
+    if(want&&!wakeLock&&typeof navigator!=="undefined"&&navigator.wakeLock){
+      const l=await navigator.wakeLock.request("screen");
+      wakeLock=l;l.addEventListener("release",()=>{if(wakeLock===l)wakeLock=null;});
+    }else if(!want&&wakeLock){const l=wakeLock;wakeLock=null;await l.release();}
+  }catch{}finally{wakeBusy=false;if(wakeAgain){wakeAgain=false;syncWakeLock();}}
+}
+function setKeepAwake(on){keepAwakeOn=!!on;try{localStorage.setItem(KEEP_AWAKE_KEY,on?"on":"off");}catch{}syncWakeLock();}
+function usePauseWakeLock(){useEffect(()=>{wakePaused++;syncWakeLock();return()=>{wakePaused--;syncWakeLock();};},[]);}
 function useTheme(){const [t,setT]=useState(THEME);useEffect(()=>{themeListeners.add(setT);return()=>{themeListeners.delete(setT);};},[]);return t;}
 const btn=(v="primary")=>({display:"inline-flex",alignItems:"center",gap:6,padding:"11px 18px",borderRadius:999,border:"none",cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontWeight:700,fontSize:14,letterSpacing:0,minHeight:44,
   ...(v==="primary"?{background:C.primaryBg,color:C.ink,boxShadow:C.primaryHi}:v==="ghost"?{background:C.raiseBg,color:C.text,border:`1px solid ${C.line}`,boxShadow:C.raise}:v==="danger"?{background:C.redBg,color:C.red,border:`1px solid ${C.red}44`}:{background:C.field,color:C.text,border:`1px solid ${C.line}`})});
@@ -233,6 +254,15 @@ function SectionHead({label}){return <div style={{fontWeight:700,fontSize:16,let
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App(){
   useTheme(); // re-render everything when the theme is switched
+  useEffect(()=>{ // keep the screen awake while the app is open
+    const sync=()=>syncWakeLock();
+    sync();
+    document.addEventListener("visibilitychange",sync);
+    window.addEventListener("pageshow",sync);
+    window.addEventListener("focus",sync);
+    document.addEventListener("pointerdown",sync,true); // some phones only grant it after a tap
+    return()=>{document.removeEventListener("visibilitychange",sync);window.removeEventListener("pageshow",sync);window.removeEventListener("focus",sync);document.removeEventListener("pointerdown",sync,true);};
+  },[]);
   const [session,setSession]=useState(null);
   const [booting,setBooting]=useState(true);
   useEffect(()=>{try{if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});}catch{}},[]);
@@ -3005,6 +3035,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
   const [editingName,setEditingName]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const theme=useTheme();
+  const [awake,setAwake]=useState(keepAwakeOn);
   const [nameInput,setNameInput]=useState(userName||"");
   const [tip,setTip]=useState("");
   const [tipLoading,setTipLoading]=useState(false);
@@ -3188,7 +3219,13 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
                 <button key={id} role="radio" aria-checked={theme===id} onClick={()=>setTheme(id)} style={segBtn(theme===id)}>{label}</button>
               ))}
             </div>
-            <div style={{fontSize:12,color:C.textFaint,marginTop:10,lineHeight:1.4}}>Saved on this device.</div>
+            <div style={{fontSize:13,fontWeight:600,color:C.textMute,margin:"16px 0 8px"}}>Keep screen on</div>
+            <div style={segWrap} role="radiogroup" aria-label="Keep screen on">
+              {[[true,"On"],[false,"Off"]].map(([v,label])=>(
+                <button key={label} role="radio" aria-checked={awake===v} onClick={()=>{setAwake(v);setKeepAwake(v);}} style={segBtn(awake===v)}>{label}</button>
+              ))}
+            </div>
+            <div style={{fontSize:12,color:C.textFaint,marginTop:10,lineHeight:1.4}}>Stops your phone locking while the app is open (not during guided runs). Settings are saved on this device.</div>
           </div>
         </div>
       )}
@@ -3764,6 +3801,7 @@ function RunningTab({data,onSave,cardioData,onSaveCardio}){
 
 // ─── Guided Run (full screen) ─────────────────────────────────────────────────
 function GuidedRun({run,weekIdx,runIdx,onFinish,onExit}){
+  usePauseWakeLock(); // runs are built for the phone to lock in a pocket
   const [blockIdx,setBlockIdx]=useState(0);
   const [secsLeft,setSecsLeft]=useState(run[0].secs);
   const [paused,setPaused]=useState(false);
