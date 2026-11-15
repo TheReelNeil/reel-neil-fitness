@@ -4,8 +4,8 @@
   "description": "Training tracker, calorie calculator and weight log.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#07070a",
-  "theme_color": "#07070a",
+  "background_color": "#e9ebf1",
+  "theme_color": "#e9ebf1",
   "orientation": "portrait",
   "icons": [
     {

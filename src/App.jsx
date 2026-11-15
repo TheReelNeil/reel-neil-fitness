@@ -129,7 +129,7 @@ const MUSCLES = [...new Set(DEFAULT_EXERCISES.map(e=>e.muscle))];
 // ─── Theme ───────────────────────────────────────────────────────────────────
 // Two palettes with the same keys. C and MC are filled from the active one and the
 // shared styles below are rebuilt by applyTheme(), so switching re-renders live.
-// The choice is kept per device in localStorage ("rnf:theme"); dark is the default.
+// The choice is kept per device in localStorage ("rnf:theme"); light is the default.
 const PALETTES={
   dark:{bg:"#07070a",surface:"#141419",surfaceAlt:"#1b1b21",field:"rgba(255,255,255,0.07)",line:"rgba(255,255,255,0.10)",lineStrong:"rgba(255,255,255,0.18)",text:"#f5f5f7",textMute:"#a7a7b0",textFaint:"#8a8a94",onDark:"#0b0b0f",ink:"#160900",orange:"#ff7a2e",orangeBg:"rgba(255,122,46,0.16)",green:"#30d158",greenBg:"rgba(48,209,88,0.15)",gold:"#ffd60a",goldBg:"rgba(255,214,10,0.12)",blue:"#64d2ff",blueBg:"rgba(100,210,255,0.14)",red:"#ff453a",redBg:"rgba(255,69,58,0.14)",glass:"rgba(255,255,255,0.065)",glassBorder:"rgba(255,255,255,0.12)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.16)",navOn:"#ffa36b",navOff:"#d1d1d6",purple:"#bf5af2",raise:"none",raiseBg:"rgba(255,255,255,0.07)",primaryBg:"#ff7a2e",primaryHi:"inset 0 1px 0 rgba(255,255,255,0.4)",primaryGlow:"inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 36px rgba(255,122,46,0.35)",bgRgb:"7,7,10",hero:"rgba(255,255,255,0.07)",heroBorder:"rgba(255,255,255,0.14)"},
   light:{bg:"#e9ebf1",surface:"#ffffff",surfaceAlt:"#f7f7fa",field:"rgba(255,255,255,0.7)",line:"rgba(30,30,60,0.09)",lineStrong:"rgba(30,30,60,0.16)",text:"#16161a",textMute:"#5a5a66",textFaint:"#72727e",onDark:"#ffffff",ink:"#160900",orange:"#ea6215",orangeBg:"rgba(234,98,21,0.13)",green:"#1e9a52",greenBg:"rgba(30,154,82,0.13)",gold:"#b38300",goldBg:"rgba(179,131,0,0.13)",blue:"#1c7cd0",blueBg:"rgba(28,124,208,0.13)",red:"#dc3328",redBg:"rgba(220,51,40,0.11)",glass:"rgba(255,255,255,0.52)",glassBorder:"rgba(255,255,255,0.85)",glassHi:"inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 2px rgba(30,30,70,0.05), 0 12px 32px rgba(30,30,70,0.09)",raise:"inset 0 1px 0 #ffffff, inset 0 -1px 0 rgba(30,30,70,0.08), 0 1px 2px rgba(30,30,70,0.12), 0 4px 12px rgba(30,30,70,0.07)",raiseBg:"linear-gradient(180deg,#ffffff 0%,#eceef4 100%)",primaryBg:"linear-gradient(180deg,#ff8d44 0%,#ee6a1c 55%,#db590e 100%)",primaryHi:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -2px 0 rgba(140,50,0,0.18), 0 2px 4px rgba(160,60,0,0.22), 0 8px 18px rgba(234,98,21,0.28)",primaryGlow:"inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 0 rgba(140,50,0,0.2), 0 3px 6px rgba(160,60,0,0.22), 0 14px 30px rgba(234,98,21,0.35)",navOn:"#d9560c",navOff:"#4f4f5a",purple:"#9b3fd1",bgRgb:"233,235,241",hero:"rgba(255,255,255,0.58)",heroBorder:"rgba(255,255,255,0.9)"},
@@ -139,7 +139,7 @@ const MC_PAL={
   light:{Chest:"#d9542f",Back:"#0f9580",Shoulders:"#c97f00",Biceps:"#d23a78",Triceps:"#d4680c",Quads:"#1e9a52",Hamstrings:"#2d6bd2",Glutes:"#a87d00",Adductors:"#9d47d2",Calves:"#5b6f82",Core:"#a87e00",Traps:"#1786bb",Forearms:"#ad6a32"},
 };
 const THEME_KEY="rnf:theme";
-let THEME=(()=>{try{return localStorage.getItem(THEME_KEY)==="light"?"light":"dark";}catch{return "dark";}})();
+let THEME=(()=>{try{return localStorage.getItem(THEME_KEY)==="dark"?"dark":"light";}catch{return "light";}})();
 const C={};const MC={};
 // Theme aware stand ins for rgba() values that were hard coded for the dark look.
 const W=a=>THEME==="light"?`rgba(20,20,30,${+(a*0.75).toFixed(3)})`:`rgba(255,255,255,${a})`; // tints: lines, fields, chips
@@ -1660,23 +1660,42 @@ const cancelRestAlert=()=>restQ(async()=>{
 // that starts the rest and the beep plays from that same audio context.
 const BEEP_KEY="rnf:restBeep";
 let restBeepMode=(()=>{try{const v=localStorage.getItem(BEEP_KEY);return v==="off"||v==="silent"?v:"on";}catch{return "on";}})();
-function setRestBeep(m){restBeepMode=m;try{localStorage.setItem(BEEP_KEY,m);}catch{}}
-let beepCtx=null;
+function setRestBeep(m){restBeepMode=m;try{localStorage.setItem(BEEP_KEY,m);}catch{}releaseBeep();}
+let beepCtx=null,beepRelease=null,restPending=false;
+const audioSess=()=>typeof navigator!=="undefined"?navigator.audioSession:null;
+// Fully let go of the sound: close the context and put the page back to normal
+// (mixable) audio, so iPhone never keeps the app as the "music player" and stops
+// pausing other apps' music when the app is reopened.
+function releaseBeep(){
+  clearTimeout(beepRelease);beepRelease=null;
+  const as=audioSess();
+  try{if(as&&as.type!=="auto")as.type="auto";}catch{}
+  const c=beepCtx;beepCtx=null;
+  if(c){try{c.close();}catch{}}
+}
 function primeBeep(){
-  if(restBeepMode==="off")return;
+  releaseBeep(); // start every rest from a clean, mixable state
+  restPending=true;
+  armBeep();
+}
+function armBeep(){
+  if(restBeepMode==="off"||beepCtx)return;
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-    if(!beepCtx)beepCtx=new AC();
+    beepCtx=new AC();
     if(beepCtx.state!=="running")beepCtx.resume();
     const src=beepCtx.createBufferSource();src.buffer=beepCtx.createBuffer(1,1,22050);src.connect(beepCtx.destination);src.start(0);
+    // Silent mode: park the sound until the beep so nothing is held during the rest
+    if(restBeepMode==="silent")setTimeout(()=>{try{beepCtx&&beepCtx.state==="running"&&beepCtx.suspend();}catch{}},150);
   }catch{}
 }
 async function playRestBeep(){
+  restPending=false;
   if(restBeepMode==="off"||!beepCtx)return;
-  const as=typeof navigator!=="undefined"?navigator.audioSession:null;
+  const as=audioSess();
   const throughSilent=restBeepMode==="silent"&&!!as;
   try{
-    if(throughSilent){await beepCtx.suspend();as.type="playback";}
+    if(throughSilent){if(beepCtx.state==="running")await beepCtx.suspend();as.type="playback";}
     if(beepCtx.state!=="running")await beepCtx.resume();
     const t0=beepCtx.currentTime+0.05;
     // beep, beep, beeeep
@@ -1688,10 +1707,16 @@ async function playRestBeep(){
       g.gain.setValueAtTime(0.8,st+len-0.04);g.gain.exponentialRampToValueAtTime(0.0001,st+len);
       o.start(st);o.stop(st+len+0.02);
     });
-    // Hand the sound back so music can carry on; the next rest tap wakes it again
-    setTimeout(async()=>{try{await beepCtx.suspend();if(throughSilent)as.type="auto";}catch{}},1300);
-  }catch{try{if(throughSilent)as.type="auto";}catch{}}
+    beepRelease=setTimeout(releaseBeep,1300); // hand the sound straight back
+  }catch{releaseBeep();}
 }
+// Belt and braces: never hold the sound while the app is in the background
+if(typeof document!=="undefined"){
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&restBeepMode==="silent")releaseBeep();});
+  // Back from another app mid-rest: the next tap anywhere re-arms the beep
+  document.addEventListener("pointerdown",()=>{if(restPending&&!beepCtx)armBeep();},true);
+}
+function cancelBeep(){restPending=false;releaseBeep();}
 
 function RestTimer({compact=false}){
   const PRESETS=[60,90,120,180];
@@ -1749,6 +1774,7 @@ function RestTimer({compact=false}){
     clearInterval(intervalRef.current);
     endTimeRef.current=null;
     setRunning(false);setTimeLeft(null);
+    cancelBeep();
     if(wasRunning)cancelRestAlert();
   };
 
