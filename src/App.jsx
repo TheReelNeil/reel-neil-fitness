@@ -1649,6 +1649,50 @@ const cancelRestAlert=()=>restQ(async()=>{
   if(s?.token)await dbSave(s.token,s.userId,"rest_timer",{id:null,endAt:null});
 });
 
+// ─── Rest timer beep ─────────────────────────────────────────────────────────
+// Three modes, saved per device ("rnf:restBeep"):
+//   off    no beep
+//   on     beeps over your music, but iPhone silent mode mutes it (default)
+//   silent beeps even on silent. iPhone only allows that by switching the app to
+//          "playback" audio, which pauses other apps' music, so it is only switched
+//          on for the beep and handed back straight after.
+// iPhone only lets a page make sound after a tap, so primeBeep() runs on the tap
+// that starts the rest and the beep plays from that same audio context.
+const BEEP_KEY="rnf:restBeep";
+let restBeepMode=(()=>{try{const v=localStorage.getItem(BEEP_KEY);return v==="off"||v==="silent"?v:"on";}catch{return "on";}})();
+function setRestBeep(m){restBeepMode=m;try{localStorage.setItem(BEEP_KEY,m);}catch{}}
+let beepCtx=null;
+function primeBeep(){
+  if(restBeepMode==="off")return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!beepCtx)beepCtx=new AC();
+    if(beepCtx.state!=="running")beepCtx.resume();
+    const src=beepCtx.createBufferSource();src.buffer=beepCtx.createBuffer(1,1,22050);src.connect(beepCtx.destination);src.start(0);
+  }catch{}
+}
+async function playRestBeep(){
+  if(restBeepMode==="off"||!beepCtx)return;
+  const as=typeof navigator!=="undefined"?navigator.audioSession:null;
+  const throughSilent=restBeepMode==="silent"&&!!as;
+  try{
+    if(throughSilent){await beepCtx.suspend();as.type="playback";}
+    if(beepCtx.state!=="running")await beepCtx.resume();
+    const t0=beepCtx.currentTime+0.05;
+    // beep, beep, beeeep
+    [[0,0.14,880],[0.25,0.14,880],[0.5,0.45,1175]].forEach(([at,len,f])=>{
+      const o=beepCtx.createOscillator(),g=beepCtx.createGain();
+      o.type="sine";o.frequency.value=f;o.connect(g);g.connect(beepCtx.destination);
+      const st=t0+at;
+      g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(0.8,st+0.015);
+      g.gain.setValueAtTime(0.8,st+len-0.04);g.gain.exponentialRampToValueAtTime(0.0001,st+len);
+      o.start(st);o.stop(st+len+0.02);
+    });
+    // Hand the sound back so music can carry on; the next rest tap wakes it again
+    setTimeout(async()=>{try{await beepCtx.suspend();if(throughSilent)as.type="auto";}catch{}},1300);
+  }catch{try{if(throughSilent)as.type="auto";}catch{}}
+}
+
 function RestTimer({compact=false}){
   const PRESETS=[60,90,120,180];
   const [duration,setDuration]=useState(()=>{try{const v=+localStorage.getItem("rnf:restLen");return PRESETS.includes(v)?v:90;}catch{return 90;}});
@@ -1670,10 +1714,12 @@ function RestTimer({compact=false}){
 
   const tick=()=>{
     if(endTimeRef.current==null)return;
+    const overdue=Date.now()-endTimeRef.current;
     const remaining=Math.max(0,Math.round((endTimeRef.current-Date.now())/1000));
     setTimeLeft(remaining);
     if(remaining<=0){
       clearInterval(intervalRef.current);
+      if(overdue<5000)playRestBeep(); // not if the phone was locked and it ended a while ago
       setRunning(false);
       endTimeRef.current=null;
       try{if(navigator.vibrate)navigator.vibrate([200,100,200]);}catch{}
@@ -1686,6 +1732,7 @@ function RestTimer({compact=false}){
     // Store the absolute end time, which survives phone sleep and tab throttling
     const endAt=Date.now()+d*1000;
     endTimeRef.current=endAt;
+    primeBeep(); // on the tap, so the beep is allowed to play when the rest ends
     setTimeLeft(d);setRunning(true);setExpanded(false);
     intervalRef.current=setInterval(tick,250);
     // Lock-screen alert. First time, ask for permission (must happen on the tap itself).
@@ -3036,6 +3083,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
   const [settingsOpen,setSettingsOpen]=useState(false);
   const theme=useTheme();
   const [awake,setAwake]=useState(keepAwakeOn);
+  const [beep,setBeep]=useState(restBeepMode);
   const [nameInput,setNameInput]=useState(userName||"");
   const [tip,setTip]=useState("");
   const [tipLoading,setTipLoading]=useState(false);
@@ -3225,7 +3273,19 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
                 <button key={label} role="radio" aria-checked={awake===v} onClick={()=>{setAwake(v);setKeepAwake(v);}} style={segBtn(awake===v)}>{label}</button>
               ))}
             </div>
-            <div style={{fontSize:12,color:C.textFaint,marginTop:10,lineHeight:1.4}}>Stops your phone locking while the app is open (not during guided runs). Settings are saved on this device.</div>
+            <div style={{fontSize:12,color:C.textFaint,marginTop:8,lineHeight:1.4}}>Stops your phone locking while the app is open (not during guided runs).</div>
+            <div style={{fontSize:13,fontWeight:600,color:C.textMute,margin:"16px 0 8px"}}>Rest timer beep</div>
+            <div style={segWrap} role="radiogroup" aria-label="Rest timer beep">
+              {[["off","Off"],["on","On"],["silent","On silent"]].map(([v,label])=>(
+                <button key={v} role="radio" aria-checked={beep===v} onClick={()=>{setBeep(v);setRestBeep(v);}} style={segBtn(beep===v)}>{label}</button>
+              ))}
+            </div>
+            <div style={{fontSize:12,color:C.textFaint,marginTop:8,lineHeight:1.4}}>
+              {beep==="off"?"No beep when a rest ends."
+                :beep==="on"?"Beeps over your music when a rest ends. Muted when your phone is on silent."
+                :"Beeps even when your phone is on silent. This pauses your music for the beep, so you may need to press play again."}
+            </div>
+            <div style={{fontSize:12,color:C.textFaint,marginTop:12,lineHeight:1.4}}>Settings are saved on this device.</div>
           </div>
         </div>
       )}
