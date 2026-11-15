@@ -361,9 +361,114 @@ function AuthScreen({onAuth}){
 }
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── Guided tour ─────────────────────────────────────────────────────────────
+// Runs the first time the app is opened on a device, and again from Settings.
+// Each step can switch tab, open the More sheet and light up a part of the
+// screen marked with data-tour="...". A step whose part isn't on screen (for
+// example the week badge before a plan exists) is skipped if marked optional,
+// otherwise its pop-up shows in the middle. Done is saved per device.
+const TOUR_KEY="rnf:tourDone";
+const tourListeners=new Set();
+function startTour(){tourListeners.forEach(f=>f());}
+const appInstalled=()=>{try{return !!(window.navigator.standalone||window.matchMedia("(display-mode: standalone)").matches);}catch{return true;}};
+const TOUR_STEPS=[
+  {title:"Welcome to The Reel Neil Fitness",body:"Here's a quick tour of how everything works. It takes about a minute.",foot:"You can skip any time, and run it again from Settings."},
+  {tab:"home",target:["nav"],title:"Getting around",body:"These buttons take you round the app:",list:["Home: your overview","Train: this week's sessions","Plans: build and pick your plan","PBs: your personal bests","More: everything else"]},
+  {tab:"home",target:["home-next"],title:"Home",body:"Once you have a plan, this card shows your next session. Tap it to jump straight in.",list:["Below it is your daily check-in and this week's progress","Further down are recovery, a daily tip and your weekly sets per muscle"]},
+  {tab:"home",target:["settings"],title:"Settings",body:"Tap the gear for:",list:["Light or dark look","Keep your screen on while you train","The rest timer beep","Show this tour again"]},
+  {tab:"home",target:["week"],optional:true,title:"Your training week",body:"Shows which week of your plan you're on. Each week has its own goal, like beating last week's numbers or a lighter deload week."},
+  {tab:"plans",target:["plans-new"],title:"Plans: start here",body:"You need a plan before you can log sessions.",list:["New plan: build your own, day by day","AI builder: describe what you want and it builds the plan for you","Then tap Activate on the plan you want to follow"]},
+  {tab:"today",target:["train-week","train-empty"],title:"Train",body:"Your plan's days for the week you're on.",list:["Start: log that day's session","Skip: mark a day you're missing","Arrows: move between weeks"]},
+  {tab:"today",title:"Logging a session",list:["Last week's weights are filled in for you in gold","Type your reps. A set ticks green once it has kg and reps","PREV shows what you did last time, so you know what to beat","The ••• button on an exercise lets you swap it or see how to do it","Finish session saves it and gives you a debrief"]},
+  {tab:"today",title:"Rest timer",body:"The round timer at the bottom of a session:",list:["Tap it to start your rest","The arrow sets 1, 1:30, 2 or 3 minutes","It beeps when your rest is up. Change the beep in Settings","Allow notifications to get an alert on your lock screen too"]},
+  {tab:"pbs",target:["nav-pbs"],title:"Personal bests",body:"PBs are picked up automatically when you log a session. You confirm each one is real before it's saved, and they all live here."},
+  {more:true,target:["more-grid"],title:"More",body:"Everything else lives under More. Here's what each one does."},
+  {more:true,target:["more-daily"],title:"Daily check-in",body:"Log your weight, calories, steps and how you're feeling each day. Your trends build up week by week."},
+  {more:true,target:["more-calories"],title:"Calories",body:"Works out your daily calorie target and macros from your details, activity and goal."},
+  {more:true,target:["more-pics"],title:"Progress pics",body:"Take front, side and back photos, then compare before and after with a slider."},
+  {more:true,target:["more-cardio"],title:"Cardio",body:"Log cardio sessions and the calories you burn against a weekly target."},
+  {more:true,target:["more-running"],title:"Run",body:"Guided running programmes with voice prompts: Couch to 5K, Couch to 10K and 5K to 10K."},
+  {more:true,target:["more-exercises"],title:"Exercises",body:"The full exercise library, with how to do each one. You can add your own here too."},
+  {when:()=>!appInstalled(),title:"Add it to your home screen",list:["iPhone: in Safari tap Share, then Add to Home Screen","Android: open the browser menu, then Install app"],foot:"It then opens like a normal app, and rest alerts work on your lock screen."},
+  {tab:"home",title:"You're all set",body:"Start in Plans: build a plan or use the AI builder, then activate it.",foot:"You can run this tour again any time from Settings on the Home page."},
+];
+function Tour({setTab,setMoreOpen,onClose}){
+  const steps=useMemo(()=>TOUR_STEPS.filter(s=>(!s.when||s.when())&&(!s.optional||(s.target||[]).some(t=>document.querySelector(`[data-tour="${t}"]`)))),[]);
+  const [i,setI]=useState(0);
+  const [rect,setRect]=useState(null);
+  const dir=useRef(1);
+  const step=steps[i];
+  const last=i===steps.length-1;
+  const go=d=>{dir.current=d;setI(x=>Math.min(steps.length-1,Math.max(0,x+d)));};
+  const finish=()=>{setMoreOpen(false);onClose();};
+  // Put the app on the right screen for this step
+  useEffect(()=>{if(step.tab)setTab(step.tab);setMoreOpen(!!step.more);},[i]);
+  // Follow the lit-up part every frame, so scrolling and layout changes never leave it behind
+  useEffect(()=>{
+    setRect(null);
+    let raf,scrolled=false,found=false;
+    const find=()=>{for(const t of step.target||[]){const el=document.querySelector(`[data-tour="${t}"]`);if(el)return el;}return null;};
+    const loop=()=>{
+      const el=find();
+      if(el){
+        found=true;
+        const r=el.getBoundingClientRect(),vh=window.innerHeight;
+        if(!scrolled&&(r.top<60||r.bottom>vh-100)&&el.closest("#scroller")){scrolled=true;el.scrollIntoView({block:"center",behavior:"smooth"});}
+        setRect(p=>p&&Math.abs(p.top-r.top)<0.5&&Math.abs(p.left-r.left)<0.5&&Math.abs(p.width-r.width)<0.5&&Math.abs(p.height-r.height)<0.5?p:{top:r.top,left:r.left,width:r.width,height:r.height});
+      }else setRect(null);
+      raf=requestAnimationFrame(loop);
+    };
+    raf=requestAnimationFrame(loop);
+    // A part that isn't there (yet) is skipped if the step is optional
+    const t=step.optional?setTimeout(()=>{if(!found)go(i===0?1:dir.current);},700):null;
+    return()=>{cancelAnimationFrame(raf);clearTimeout(t);};
+  },[i]);
+  useEffect(()=>{const k=e=>{if(e.key==="Escape")finish();else if(e.key==="ArrowRight")last?finish():go(1);else if(e.key==="ArrowLeft"&&i>0)go(-1);};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[i,last]);
+  if(step.optional&&!rect)return(<div style={{position:"fixed",inset:0,zIndex:80,background:K(0.62)}}/>);
+
+  const vw=typeof window!=="undefined"?window.innerWidth:390,vh=typeof window!=="undefined"?window.innerHeight:800;
+  const cardW=Math.min(380,vw-24);
+  const PAD=8,GAP=14,ROOM=240;
+  let pos={left:(vw-cardW)/2,top:"50%",transform:"translateY(-50%)"};
+  if(rect){
+    const spaceAbove=rect.top-PAD-GAP,spaceBelow=vh-(rect.top+rect.height)-PAD-GAP;
+    const preferAbove=rect.top+rect.height/2>vh*0.5;
+    if(preferAbove&&spaceAbove>=ROOM)pos={left:(vw-cardW)/2,bottom:vh-rect.top+PAD+GAP};
+    else if(!preferAbove&&spaceBelow>=ROOM)pos={left:(vw-cardW)/2,top:rect.top+rect.height+PAD+GAP};
+    else if(spaceAbove>=ROOM)pos={left:(vw-cardW)/2,bottom:vh-rect.top+PAD+GAP};
+    else if(spaceBelow>=ROOM)pos={left:(vw-cardW)/2,top:rect.top+rect.height+PAD+GAP};
+    else if(rect.top+rect.height/2<vh*0.5)pos={left:(vw-cardW)/2,bottom:"calc(env(safe-area-inset-bottom, 0px) + 12px)"};
+    else pos={left:(vw-cardW)/2,top:"calc(env(safe-area-inset-top, 0px) + 12px)"};
+  }
+  const dim=K(0.62);
+  return(<>
+    {/* Blocks taps on the app while the tour is open */}
+    <div aria-hidden="true" style={{position:"fixed",inset:0,zIndex:80,background:rect?"transparent":dim,transition:"background .25s"}}/>
+    {rect&&<div aria-hidden="true" style={{position:"fixed",zIndex:81,pointerEvents:"none",top:rect.top-PAD,left:rect.left-PAD,width:rect.width+PAD*2,height:rect.height+PAD*2,borderRadius:Math.min(34,(rect.height+PAD*2)/2),boxShadow:`0 0 0 9999px ${dim}, 0 0 0 2px ${C.orange}, 0 0 24px 4px ${C.orange}55`,transition:"top .3s ease, left .3s ease, width .3s ease, height .3s ease, border-radius .3s ease"}}/>}
+    <div role="dialog" aria-modal="true" aria-labelledby="tour-title" style={{position:"fixed",zIndex:82,width:cardW,boxSizing:"border-box",...pos,maxHeight:vh-24,overflowY:"auto",borderRadius:28,padding:18,background:P("30,30,36",0.97),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,boxShadow:`${C.glassHi}, 0 20px 60px ${S(0.6)}`,animation:"fadeIn .2s ease",fontFamily:"'Inter',system-ui,sans-serif"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:8}}>
+        <div style={{fontSize:12,fontWeight:700,color:C.orange,letterSpacing:0.3}}>{i+1} of {steps.length}</div>
+        {!last&&<button onClick={finish} style={{background:"none",border:"none",padding:"6px 2px",color:C.textMute,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Skip tour</button>}
+      </div>
+      <div id="tour-title" style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:20,fontWeight:800,letterSpacing:-0.4,color:C.text,lineHeight:1.2}}>{step.title}</div>
+      <div aria-live="polite">
+        {step.body&&<div style={{fontSize:15,color:C.text,lineHeight:1.45,marginTop:8}}>{step.body}</div>}
+        {step.list&&<ul style={{margin:"8px 0 0",paddingLeft:20,color:C.text,fontSize:15,lineHeight:1.45}}>{step.list.map((x,k)=><li key={k} style={{marginTop:4}}>{x}</li>)}</ul>}
+        {step.foot&&<div style={{fontSize:13,color:C.textMute,lineHeight:1.4,marginTop:10}}>{step.foot}</div>}
+      </div>
+      <div style={{display:"flex",gap:8,marginTop:16}}>
+        {i>0&&<button onClick={()=>go(-1)} style={{...btn("ghost"),flex:1,justifyContent:"center"}}>Back</button>}
+        <button autoFocus onClick={()=>last?finish():go(1)} style={{...btn("primary"),flex:i>0?1.4:1,justifyContent:"center"}}>{last?"Let's go":i===0?"Start the tour":"Next"}</button>
+      </div>
+    </div>
+  </>);
+}
+
 function MainApp({session,onLogout}){
   const [tab,setTab]=useState("home");
   const [moreOpen,setMoreOpen]=useState(false);
+  const [tourOpen,setTourOpen]=useState(false);
+  useEffect(()=>{const f=()=>{setSessionDay(null);setTourOpen(true);};tourListeners.add(f);return()=>{tourListeners.delete(f);};},[]);
   // Always start a tab at the top — scroll position shouldn't carry over
   useEffect(()=>{document.getElementById("scroller")?.scrollTo({top:0});},[tab]);
   const [exercises,setExercises]=useState(null);
@@ -387,6 +492,14 @@ function MainApp({session,onLogout}){
   const [userName,setUserName]=useState("");
   const [ready,setReady]=useState(false);
   const [sessionDay,setSessionDay]=useState(null);
+  // First time the app is opened on this device: run the tour once it has loaded
+  useEffect(()=>{
+    if(!ready)return;
+    let seen=true;try{seen=localStorage.getItem(TOUR_KEY)==="1";}catch{}
+    if(seen)return;
+    const t=setTimeout(()=>setTourOpen(true),600);
+    return()=>clearTimeout(t);
+  },[ready]);
   const [syncing,setSyncing]=useState(false);
   const {token,userId}=session;
 
@@ -538,7 +651,7 @@ function MainApp({session,onLogout}){
             {syncing&&<div style={{fontSize:10,color:C.textMute,fontWeight:600,letterSpacing:0.5}}>SAVING…</div>}
             {saveError&&<div style={{fontSize:10,color:C.red,fontWeight:600,maxWidth:120,textAlign:"right"}}>{saveError}</div>}
             {!syncing&&!saveError&&<div style={{fontSize:10,color:C.green,fontWeight:600,letterSpacing:0.5,opacity:0}}>✓</div>}
-            {activePlan&&<div style={{background:C.field,border:`1px solid ${C.line}`,color:C.text,fontWeight:700,fontSize:13,padding:"7px 12px",borderRadius:999,whiteSpace:"nowrap"}}>Week {currentWeek}</div>}
+            {activePlan&&<div data-tour="week" style={{background:C.field,border:`1px solid ${C.line}`,color:C.text,fontWeight:700,fontSize:13,padding:"7px 12px",borderRadius:999,whiteSpace:"nowrap"}}>Week {currentWeek}</div>}
             <a href="https://www.instagram.com/the_reel_neil" target="_blank" rel="noopener noreferrer"
   style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:36,height:36,borderRadius:18,background:"linear-gradient(135deg,#405de6,#5851db,#833ab4,#c13584,#e1306c,#fd1d1d,#f56040,#f77737,#fcaf45,#ffdc80)",textDecoration:"none",flexShrink:0}}>
   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{width:17,height:17}}>
@@ -564,25 +677,26 @@ function MainApp({session,onLogout}){
         {tab==="running"  &&<RunningTab data={runData} onSave={saveRunData} cardioData={cardioData} onSaveCardio={saveCardioData}/>}
       </div>
       <div aria-hidden="true" style={{position:"absolute",left:0,right:0,bottom:0,height:"calc(env(safe-area-inset-bottom, 0px) + 110px)",background:`linear-gradient(to bottom, ${B(0)}, ${B(0.85)} 60%)`,pointerEvents:"none",zIndex:55}}/>
-      <nav aria-label="Main" style={{position:"absolute",left:14,right:14,bottom:"calc(env(safe-area-inset-bottom, 0px) + 10px)",height:68,borderRadius:34,background:P("38,38,46",0.62),backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",border:`1px solid ${THEME==="light"?"rgba(255,255,255,0.85)":W(0.15)}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.2), 0 18px 44px ${S(0.6)}`,display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",alignItems:"center",padding:"0 6px",zIndex:60}}>
+      <nav data-tour="nav" aria-label="Main" style={{position:"absolute",left:14,right:14,bottom:"calc(env(safe-area-inset-bottom, 0px) + 10px)",height:68,borderRadius:34,background:P("38,38,46",0.62),backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",border:`1px solid ${THEME==="light"?"rgba(255,255,255,0.85)":W(0.15)}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.2), 0 18px 44px ${S(0.6)}`,display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",alignItems:"center",padding:"0 6px",zIndex:60}}>
         {NAV.map(([id,label,icon])=>{
           const on=id==="more"?(inMore||moreOpen):(tab===id&&!moreOpen);
           return(
-            <button key={id} aria-label={label} aria-current={on&&id!=="more"?"page":undefined} onClick={()=>{if(id==="more")setMoreOpen(o=>!o);else{setMoreOpen(false);setTab(id);}}}
+            <button key={id} data-tour={"nav-"+id} aria-label={label} aria-current={on&&id!=="more"?"page":undefined} onClick={()=>{if(id==="more")setMoreOpen(o=>!o);else{setMoreOpen(false);setTab(id);}}}
               style={{height:56,margin:"0 2px",borderRadius:28,border:"none",background:on?C.orangeBg:"transparent",color:on?C.navOn:C.navOff,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:10,fontWeight:on?700:600,padding:0}}>
               {icon}<span>{label}</span>
             </button>
           );
         })}
       </nav>
+      {tourOpen&&<Tour setTab={setTab} setMoreOpen={setMoreOpen} onClose={()=>{setTourOpen(false);try{localStorage.setItem(TOUR_KEY,"1");}catch{}}}/>}
       {moreOpen&&(
         <div role="dialog" aria-label="More" style={{position:"fixed",inset:0,zIndex:58,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
           <div onClick={()=>setMoreOpen(false)} style={{position:"absolute",inset:0,background:K(0.55)}}/>
           <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:P("34,34,40",0.86),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${THEME==="light"?"rgba(255,255,255,0.85)":W(0.14)}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.2), 0 -10px 60px ${S(0.6)}`,padding:14,animation:"fadeIn .18s ease-out"}}>
             <div style={{fontSize:13,fontWeight:600,color:C.textMute,padding:"2px 6px 10px"}}>More</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
+            <div data-tour="more-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
               {MORE.map(([id,label,icon,col])=>(
-                <button key={id} onClick={()=>{setTab(id);setMoreOpen(false);}} aria-current={tab===id?"page":undefined}
+                <button key={id} data-tour={"more-"+id} onClick={()=>{setTab(id);setMoreOpen(false);}} aria-current={tab===id?"page":undefined}
                   style={{height:92,borderRadius:22,border:`1px solid ${tab===id?col+"88":W(0.08)}`,background:tab===id?col+"1f":WB(0.06),boxShadow:C.raise,color:C.text,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:"'Inter',system-ui,sans-serif",fontSize:13,fontWeight:600,padding:"0 4px"}}>
                   <span style={{width:40,height:40,borderRadius:20,background:col+"26",color:col,display:"flex",alignItems:"center",justifyContent:"center"}}>{icon}</span>
                   {label}
@@ -1574,10 +1688,10 @@ function TodayTab({activePlan,currentWeek,logs,exMap,onStartSession,onWeekChange
     const weekData={...(logs[planId]?.[week]||{}),[dayIdx]:{_skipped:true}};
     onSaveLogs({...logs,[planId]:{...(logs[planId]||{}),[week]:weekData}});
   };
-  if(!activePlan)return(<div style={{padding:32,textAlign:"center"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,color:C.textFaint,marginBottom:12}}>No active plan</div><div style={{color:C.textMute,marginBottom:24,fontSize:14}}>Create or activate a training plan to get started.</div><button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={onSelectPlan}>{Ic.plus} Create a Plan</button></div>);
+  if(!activePlan)return(<div data-tour="train-empty" style={{padding:32,textAlign:"center"}}><div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:32,fontWeight:800,color:C.textFaint,marginBottom:12}}>No active plan</div><div style={{color:C.textMute,marginBottom:24,fontSize:14}}>Create or activate a training plan to get started.</div><button style={{...btn("primary"),width:"100%",justifyContent:"center"}} onClick={onSelectPlan}>{Ic.plus} Create a Plan</button></div>);
   const focus=["Set Load","Beat Load","Increase Volume","Increase Volume","Increase Volume","DELOAD","Beat Week 1","Beat Week 2","Beat Week 3","Beat Week 4","Beat Week 5","DELOAD"][currentWeek-1]||"";
   return(<div style={{padding:"14px 14px 24px"}}>
-    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+    <div data-tour="train-week" style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
       <button aria-label="Previous week" style={{...btn("ghost"),padding:0,width:44,justifyContent:"center",fontSize:22,opacity:currentWeek<=1?0.35:1}} disabled={currentWeek<=1} onClick={()=>onWeekChange(currentWeek-1)}>‹</button>
       <div style={{flex:1,textAlign:"center"}}>
         <div style={h1}>Week {currentWeek}</div>
@@ -2494,7 +2608,7 @@ function PlansTab({plans,exercises,activePlanId,exMap,onActivate,onSavePlans}){
   if(aiBuilding){return (<AIPlanBuilder exercises={exercises} exMap={exMap} onSave={p=>{onSavePlans(prev=>[...prev,{...p,id:`p${Date.now()}`}]);setAiBuilding(false);}} onCancel={()=>setAiBuilding(false)}/>);}
   return(<div style={{padding:"14px 14px 24px"}}>
     <div style={{...h1,marginBottom:14}}>Plans</div>
-    <div style={{display:"flex",gap:8,marginBottom:16}}>
+    <div data-tour="plans-new" style={{display:"flex",gap:8,marginBottom:16}}>
       <button style={{...btn("primary"),flex:1,justifyContent:"center"}} onClick={()=>setEditing("new")}>{Ic.plus} New plan</button>
       <button style={{...btn("ghost"),flex:1,justifyContent:"center",color:C.blue,border:"1px solid rgba(100,210,255,0.35)",background:C.blueBg}} onClick={()=>setAiBuilding(true)}>{"✨"} AI builder</button>
     </div>
@@ -3282,7 +3396,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
       {settingsOpen&&(
         <div role="dialog" aria-label="Settings" style={{position:"fixed",inset:0,zIndex:58,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center"}}>
           <div onClick={()=>setSettingsOpen(false)} style={{position:"absolute",inset:0,background:K(0.55)}}/>
-          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",borderRadius:34,background:P("34,34,40",0.9),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,boxShadow:`${C.glassHi}, 0 -10px 60px ${S(0.6)}`,padding:16,animation:"fadeIn .2s ease"}}>
+          <div style={{position:"relative",width:"calc(100% - 16px)",maxWidth:464,marginBottom:"calc(env(safe-area-inset-bottom, 0px) + 90px)",maxHeight:"calc(100dvh - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px) - 110px)",overflowY:"auto",boxSizing:"border-box",borderRadius:34,background:P("34,34,40",0.9),backdropFilter:"blur(40px) saturate(180%)",WebkitBackdropFilter:"blur(40px) saturate(180%)",border:`1px solid ${C.glassBorder}`,boxShadow:`${C.glassHi}, 0 -10px 60px ${S(0.6)}`,padding:16,animation:"fadeIn .2s ease"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
               <div style={{fontWeight:700,fontSize:17,color:C.text}}>Settings</div>
               <button aria-label="Close settings" onClick={()=>setSettingsOpen(false)} style={{...btn("ghost"),padding:0,width:36,height:36,minHeight:36,justifyContent:"center"}}>{Ic.x}</button>
@@ -3311,6 +3425,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
                 :beep==="on"?"Beeps over your music when a rest ends. Muted when your phone is on silent."
                 :"Beeps even when your phone is on silent. This pauses your music for the beep, so you may need to press play again."}
             </div>
+            <button onClick={()=>{setSettingsOpen(false);startTour();}} style={{...btn("ghost"),width:"100%",justifyContent:"center",marginTop:18,height:48}}>Show the tour again</button>
             <div style={{fontSize:12,color:C.textFaint,marginTop:12,lineHeight:1.4}}>Settings are saved on this device.</div>
           </div>
         </div>
@@ -3329,7 +3444,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
           <>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
               <div style={{fontSize:14,color:C.textMute,fontWeight:500}}>{greeting}</div>
-              <button aria-label="Settings" title="Settings" onClick={()=>setSettingsOpen(true)}
+              <button data-tour="settings" aria-label="Settings" title="Settings" onClick={()=>setSettingsOpen(true)}
                 style={{...btn("ghost"),padding:0,width:36,height:36,minHeight:36,justifyContent:"center",flexShrink:0}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:17,height:17}} aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               </button>
@@ -3344,7 +3459,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
 
       {/* Today hero */}
       {activePlan?(
-        <div style={{...card,borderRadius:32,padding:20,background:C.hero,border:`1px solid ${C.heroBorder}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.22), 0 24px 60px ${S(0.45)}`}}>
+        <div data-tour="home-next" style={{...card,borderRadius:32,padding:20,background:C.hero,border:`1px solid ${C.heroBorder}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.22), 0 24px 60px ${S(0.45)}`}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             {kick(heroDay?"Today":"This week",C.orange)}
             <div style={{fontSize:12,fontWeight:600,color:C.textMute}}>{heroDay?`${heroNames.length} exercises`:activePlan.name}</div>
@@ -3375,7 +3490,7 @@ function HomeTab({session,activePlan,currentWeek,logs,pbs,exMap,weightData,calPr
           </div>
         </div>
       ):(
-        <div style={{...card,borderRadius:32,padding:20}}>
+        <div data-tour="home-next" style={{...card,borderRadius:32,padding:20}}>
           {kick("Get started",C.orange)}
           <div style={{fontFamily:"'Inter Tight','Inter',system-ui,sans-serif",fontSize:26,fontWeight:800,letterSpacing:-0.8,marginTop:4,color:C.text}}>No active plan yet</div>
           <div style={{fontSize:14,color:C.textMute,marginTop:4}}>Pick or build a training plan to start logging sessions.</div>
